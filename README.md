@@ -1,1 +1,1 @@
-# LearnCoq
+# My micro-projects in Coq
