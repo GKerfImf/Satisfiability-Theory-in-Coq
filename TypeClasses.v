@@ -13,7 +13,7 @@ Module TypeClasses.
   Definition extensional_equivalence {A B} (f g: A -> B) := forall x, f x = g x.
   Infix "[=]" := extensional_equivalence.
   
-(*  Notation ...
+  (*  Notation ...
   Definition compose f g = ... *)
   
   (* TODO: add compose *)
@@ -26,7 +26,7 @@ Module TypeClasses.
           fmap (f(.) g) [=] ((fmap f) (.) (fmap g))
     }.
 
-(*  (* TOOD: comment *)
+  (*  (* TOOD: comment *)
   Class Contravariant (F: Type -> Type) :=
     { cmap: forall {A B}, (A -> B) -> (F B -> F A)
       ; _: True
@@ -43,7 +43,7 @@ Module TypeClasses.
     { dimap: forall {A B C D}, (A -> B) -> (C -> D) -> (F B C) -> (F A D)
       ; _: True
     }.
-*)
+   *)
   
 
   Section Applicative.
@@ -95,50 +95,50 @@ Module TypeClasses.
   End Transformers.
   
   Section Option.
-  
-  Instance option_functor: (Functor option) :=
-    { fmap A B f a :=
-        match a with
-        | None => None
-        | Some a => Some (f a)
-        end
-    }.
-  Proof.
-    intros. intros x. destruct x; reflexivity.
-    intros. intros x. 
-    compute. destruct x; reflexivity.
     
-  Defined.
- 
-  Instance option_applicative: (Applicative option) :=
-    { pure {A} (x: A) := Some x
-      ; app {A B} f x :=
-          match f, x with
-          | Some f, Some x => Some (f x)
-          | _, _ => None
+    Instance option_functor: (Functor option) :=
+      { fmap A B f a :=
+          match a with
+          | None => None
+          | Some a => Some (f a)
           end
-    }.
-  Proof.
-    - intros; destruct v; reflexivity.
-    - intros; reflexivity. 
-    - intros; destruct u; reflexivity.
-    - intros; destruct u, v, w; reflexivity.
-  Qed.
+      }.
+    Proof.
+      intros. intros x. destruct x; reflexivity.
+      intros. intros x. 
+      compute. destruct x; reflexivity.
+      
+    Defined.
+    
+    Instance option_applicative: (Applicative option) :=
+      { pure {A} (x: A) := Some x
+        ; app {A B} f x :=
+            match f, x with
+            | Some f, Some x => Some (f x)
+            | _, _ => None
+            end
+      }.
+    Proof.
+      - intros; destruct v; reflexivity.
+      - intros; reflexivity. 
+      - intros; destruct u; reflexivity.
+      - intros; destruct u, v, w; reflexivity.
+    Qed.
 
-  Instance option_monad: (Monad option) :=
-    { unit A a := Some a;
-      bind A B a f :=
-        match a with
-        | Some a => f a
-        | _ => None
-        end
-    }.
-  Proof.
-    all: intros.
-    - reflexivity.
-    - destruct m; reflexivity.
-    - destruct m; try destruct (k a); reflexivity.
-  Defined.
+    Instance option_monad: (Monad option) :=
+      { unit A a := Some a;
+        bind A B a f :=
+          match a with
+          | Some a => f a
+          | _ => None
+          end
+      }.
+    Proof.
+      all: intros.
+      - reflexivity.
+      - destruct m; reflexivity.
+      - destruct m; try destruct (k a); reflexivity.
+    Defined.
 
 
   End Option.
