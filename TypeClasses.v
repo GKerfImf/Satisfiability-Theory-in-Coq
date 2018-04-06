@@ -16,16 +16,25 @@ Module TypeClasses.
   Definition extensional_equivalence {A B} (f g: A -> B) := forall x, f x = g x.
   Infix "[=]" := extensional_equivalence.
 
-  Inductive identity {A: Type}: Type := Ident: A -> @identity A.
-  (* Inductive composition {F: Type -> Type} {G: Type -> Type} := Comp: forall X, X -> omposition F G. *)
 
-(*  Print option.
-  Print identity.
-  *)
+  Inductive identity {A: Type}: Type :=
+    Ident: A -> @identity A.
+
+  (* Definition composition (F: Type -> Type) (G: Type -> Type) (A: Type): Type := F (G A). *)
+
+  Inductive composition {F: Type -> Type} {G: Type -> Type} {A: Type}: Type :=
+    Comp: (F (G A)) -> @composition F G A.
+
+ 
+
+
+  
   (*  Notation ...
   Definition compose f g = ... *)
   
   (* TODO: add compose *)
+
+  Section Functor.
   
   (* TODO: Comment *)
   Class Functor (F: Type -> Type) :=
@@ -34,6 +43,20 @@ Module TypeClasses.
       ; fmap_comp: forall {A B C} (f: B -> C) (g: A -> B),
           fmap (f(.) g) [=] ((fmap f) (.) (fmap g))
     }.
+
+
+  Lemma functor_property:
+    forall (F: Type -> Type) `{! Functor F} (G: Type -> Type) `{! Functor G}
+           (A B C: Type) (f: B -> C) (g: A -> B) (x: F (G A)),
+      fmap (fmap (f (.) g)) x = fmap (fmap f) (fmap (fmap g) x).
+  Proof.
+    clear.
+    intros.
+    admit.
+    
+  Admitted.
+        
+  End Functor.
 
   (*  (* TOOD: comment *)
   Class Contravariant (F: Type -> Type) :=
@@ -125,14 +148,14 @@ Module TypeClasses.
   
   Section Traversable.
 
+    Hypothesis EE: forall {A B: Type} (f g: A -> B), (forall x, f x = g x) -> f = g.
+
     Class ApplicativeTransformation
           {T} `{! Applicative T}
-          {F} `{! Applicative F} (t: forall {A}, T A -> F A) :=
-      { 
-         _: forall {A} (x: A),
-          t (pure x) = pure x
-        ; _: forall {A B: Type} (x:_ ) (y: _),
-            t (app x y) = @app F _ A B (t x) (t y)
+          {F} `{! Applicative F}
+          (t: forall {A}, T A -> F A) :=
+      { _: forall {A} (x: A), t (pure x) = pure x
+        ; _: forall {A B: Type} (x:_ ) (y: _), t (app x y) = @app F _ A B (t x) (t y)
       }.
  
 
@@ -159,25 +182,90 @@ Module TypeClasses.
       { intros; reflexivity. }
       { intros; destruct u; reflexivity.  }
       { intros; destruct u, v, w; reflexivity. }
-    Defined.    
-      
-  
-     Class Traversable (T: Type -> Type) :=
+    Defined.
+
+    
+    Instance composition_functor:
+      forall F `{! Functor F} G `{! Functor G}, Functor (@composition F G) :=
+      { fmap A B f x:=
+          match x with
+          | Comp x => Comp (fmap (fmap f) x)
+          end
+      }.
+    Proof.
+      { intros A x; destruct x; unfold fmap.
+        destruct Functor0, Functor1.
+        assert(Id: (fmap0 (G A) (G A) (fmap1 A A id) f) = f).
+        { assert(AddId: f = id f) by auto.
+          rewrite AddId at 2; clear AddId.
+          assert(Id: fmap1 A A id = id). 
+          { apply EE; intros; rewrite fmap_id1; reflexivity. }
+          rewrite Id; clear Id.
+          rewrite fmap_id0; reflexivity.
+        }
+        rewrite Id; reflexivity.
+      }
+      { intros ? ? ? ? ? ?; destruct x; unfold compose.
+        assert (EQ: (fun x : A => f (g x)) = (f (.) g) ) by reflexivity.
+        rewrite EQ; clear EQ.
+        rewrite functor_property; reflexivity. 
+      } 
+    Defined.
+
+    Instance composition_applicative:
+      forall F `{! Applicative F} G `{! Applicative G}, Applicative (@composition F G) :=
+      { pure A a := Comp (pure (pure a)) 
+        ; app A B f x :=
+            match f, x with
+            | Comp f, Comp x => Comp (app (fmap app f) x)
+            end
+      }.
+    Proof.
+      { intros; destruct v.
+        destruct Applicative0, Applicative1.
+        destruct functor0, functor1.
+        admit.
+      }
+      { intros.
+        destruct Applicative0, Applicative1.
+        destruct functor0, functor1.
+        unfold app, pure, fmap.
+        
+        admit. }
+      { intros; destruct u.
+        
+        admit. }
+      {         destruct u as [u], v as [v], w as [w].
+                
+        destruct Applicative0, Applicative1.
+        destruct functor0, functor1.
+                compute.
+                
+        admit. }
+    Admitted.
+
+    Class Traversable (T: Type -> Type) :=
       { functorTraversable :> Functor T 
         ; foldableTraversable :> Foldable T
         ; traverse: forall {A} {B} {F} `{! Applicative F},
             (A -> F B) -> T A -> F (T B)
-        (* ; _: traverse (Compose.fmap g . f) =Compose . fmap (traverse g) . traverse f *)
-
-        ; _: forall (A B: Type) (F: Type -> Type) `{Applicative F} 
+        ; naturality: forall (A B: Type) (F: Type -> Type) `{Applicative F} 
                     (f: A -> F B) (t: forall {A}, F A -> F A)
                     `{! ApplicativeTransformation (@t)},
-            (* `{! ApplicativeTransformation t} *)
-            
             ((t (.) (traverse f))) [=] ((traverse (t (.) f))) 
 
         ; _: forall {A: Type}, (@traverse A _ _ _ (Ident)) [=] Ident
-        ; _: True
+
+        (* Check this law *) 
+        ; _: forall {A B C: Type} (f: A -> identity) (g: B -> identity) (x: T A),
+            
+
+            @traverse A _ _ _ ((@Comp _ _ B) (.) (@fmap _ _ _ _ g) (.) f) x
+                      
+            = 
+            
+            ((@Comp _ _ _ ) (.) fmap (@traverse _ _ _ _ g) (.) (@traverse _ _ _ _ f)) x
+                      
       }.
 
 
@@ -239,7 +327,15 @@ Module TypeClasses.
         - destruct ApplicativeTransformation0; eauto.
       }
       { intros ? ?; destruct x; reflexivity. } 
-      {  }
+      { intros ? ? ? ? ? x. 
+        destruct x.
+        { unfold compose.
+          unfold app.
+          unfold identity_applicative. compute.
+          destruct (f a). destruct (g b). 
+        unfold composition.
+
+      }
     Defined.
        
   End Traversable.
