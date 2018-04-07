@@ -333,17 +333,17 @@ Module TypeClasses.
           unfold app.
           unfold identity_applicative. compute.
           destruct (f a). destruct (g b). 
-        unfold composition.
+          admit.
 
       }
-    Defined.
+    Admitted.
        
   End Traversable.
   
   Section Option.
     
     
-    Instance option_monad: (Monad option) :=
+(*    Instance option_monad: (Monad option) :=
       { unit A a := Some a;
         bind A B a f :=
           match a with
@@ -369,6 +369,8 @@ Module TypeClasses.
   Proof.
     intros. 
     destruct Monad.
+*)
 
-    
+  End Option.
+  
 End TypeClasses.

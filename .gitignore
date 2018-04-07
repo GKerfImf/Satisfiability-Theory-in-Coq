@@ -1,3 +1,14 @@
-*.vo
+*.d
 *.glob
-*.v.d
+*.vo
+*.html
+*.css
+/html
+*.aux
+Makefile*
+*.crashcoqide
+*.v#
+*.cache
+*~
+*.orig
+*/.#*
