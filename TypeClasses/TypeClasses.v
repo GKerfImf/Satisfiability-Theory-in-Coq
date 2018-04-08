@@ -1,5 +1,6 @@
-Require Import Coq.Init.Datatypes.
-Set Implicit Arguments.
+Require Import Init.Datatypes
+               Logic.FunctionalExtensionality.
+Set Implicit Arguments. 
 
 Require Import List.
 Require Import Functor.
@@ -132,8 +133,10 @@ Module TypeClasses.
           end
       }.
     Proof.
-      { intros A a; destruct a; reflexivity. }
-      { intros ? ? ? ? ? ?; destruct x; reflexivity. }
+      { intros A; apply functional_extensionality; intros x.
+        destruct x; reflexivity. }
+      { intros ? ? ? ? ?; apply functional_extensionality; intros x.
+        destruct x; reflexivity. }
     Defined.
 
     Instance identity_applicative: (Applicative (@identity)) :=
@@ -159,7 +162,8 @@ Module TypeClasses.
           end
       }.
     Proof.
-      { intros A x; destruct x; unfold fmap.
+      { intros A; apply functional_extensionality; intros x.
+        destruct x; unfold fmap.
         destruct Functor0, Functor1.
         assert(Id: (fmap0 (G A) (G A) (fmap1 A A id) f) = f).
         { assert(AddId: f = id f) by auto.
@@ -168,10 +172,10 @@ Module TypeClasses.
           { apply EE; intros; rewrite fmap_id1; reflexivity. }
           rewrite Id; clear Id.
           rewrite fmap_id0; reflexivity.
-        }
-        rewrite Id; reflexivity.
+        } rewrite Id; reflexivity.
       }
-      { intros ? ? ? ? ? ?; destruct x; unfold compose.
+      { intros ? ? ? ? ?; apply functional_extensionality; intros x.
+        destruct x; unfold compose.
         assert (EQ: (fun x : A => f (g x)) = (f (.) g) ) by reflexivity.
         rewrite EQ; clear EQ.
         rewrite functor_property; reflexivity. 
@@ -218,9 +222,9 @@ Module TypeClasses.
         ; naturality: forall (A B: Type) (F: Type -> Type) `{Applicative F} 
                     (f: A -> F B) (t: forall {A}, F A -> F A)
                     `{! ApplicativeTransformation (@t)},
-            ((t (.) (traverse f))) [=] ((traverse (t (.) f))) 
+            ((t (.) (traverse f))) = ((traverse (t (.) f))) 
 
-        ; _: forall {A: Type}, (@traverse A _ _ _ (Ident)) [=] Ident
+        ; _: forall {A: Type}, (@traverse A _ _ _ (Ident)) = Ident
 
         (* Check this law *) 
         ; _: forall {A B C: Type} (f: A -> identity) (g: B -> identity) (x: T A),
@@ -243,20 +247,20 @@ Module TypeClasses.
           end
       }.
     Proof.
-      intros. intros x. destruct x; reflexivity.
-      intros. intros x. 
+      intros. apply functional_extensionality. intros x. destruct x; reflexivity.
+      intros. apply functional_extensionality. intros x. 
       compute. destruct x; reflexivity.
     Defined.
 
     Instance list_functor: (Functor list) :=
       { fmap A B f a := map f a }.
     Proof.
-      { intros A xs.
+      { intros A; apply functional_extensionality; intros xs.
         induction xs.
         - reflexivity.
         - simpl; rewrite IHxs; compute; reflexivity.
       }
-      { intros ? ? ? ? ? xs; unfold compose.
+      { intros ? ? ? ? ?; apply functional_extensionality; intros xs.
         induction xs.
         - reflexivity.
         - simpl; rewrite IHxs; compute; reflexivity.
@@ -287,12 +291,14 @@ Module TypeClasses.
       }.
     Proof.
       { admit. }
-      { intros ? ? ? ? ? ? ? ?; destruct x; unfold compose.
+      { intros ? ? ? ? ? ? ?; apply functional_extensionality; intros x.
+        destruct x; unfold compose.
         - destruct ApplicativeTransformation0.
           rewrite H1, H0; reflexivity. 
         - destruct ApplicativeTransformation0; eauto.
       }
-      { intros ? ?; destruct x; reflexivity. } 
+      { intros ?; apply functional_extensionality; intros x.
+        destruct x; reflexivity. } 
       { intros ? ? ? ? ? x. 
         destruct x.
         { unfold compose.
