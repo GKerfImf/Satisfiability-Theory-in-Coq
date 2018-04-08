@@ -13,8 +13,8 @@ Module Functor.
 
   (* ??? *)
   Reserved Notation "f [=] g" (at level 70, no associativity).
-  Definition extensional_equivalence {A B} (f g: A -> B) := forall x, f x = g x.
-  Infix "[=]" := extensional_equivalence.
+  Definition extensional_equality {A B} (f g: A -> B) := forall x, f x = g x.
+  Infix "[=]" := extensional_equality. 
 
   Section Definitions.
     

@@ -18,9 +18,6 @@ Module TypeClasses.
   Inductive composition {F: Type -> Type} {G: Type -> Type} {A: Type}: Type :=
     Comp: (F (G A)) -> @composition F G A.
 
- 
-
-
   
   (*  Notation ...
   Definition compose f g = ... *)
@@ -338,8 +335,8 @@ Module TypeClasses.
   Proof.
     intros. 
     destruct Monad.
-*)
-
+ *)
+  
   End Option.
   
 End TypeClasses.
