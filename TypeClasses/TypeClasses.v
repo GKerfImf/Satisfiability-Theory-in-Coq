@@ -1,18 +1,17 @@
 Require Import Init.Datatypes
                Logic.FunctionalExtensionality.
-Set Implicit Arguments. 
-
 Require Import List.
 Require Import Functor
-               Applicative. 
+               Applicative.
+Require Import Identity.
+
+Set Implicit Arguments.
+
 Import ListNotations.
 
 Module TypeClasses.
 
-  Import Functor Applicative. 
-
-  Inductive identity {A: Type}: Type :=
-    Ident: A -> @identity A.
+  Import Identity Functor Applicative. 
 
   Inductive composition {F: Type -> Type} {G: Type -> Type} {A: Type}: Type :=
     Comp: (F (G A)) -> @composition F G A.
