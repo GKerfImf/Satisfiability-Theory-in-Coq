@@ -14,8 +14,6 @@ Module TypeClasses.
   Inductive identity {A: Type}: Type :=
     Ident: A -> @identity A.
 
-  (* Definition composition (F: Type -> Type) (G: Type -> Type) (A: Type): Type := F (G A). *)
-
   Inductive composition {F: Type -> Type} {G: Type -> Type} {A: Type}: Type :=
     Comp: (F (G A)) -> @composition F G A.
 
@@ -53,11 +51,11 @@ Module TypeClasses.
       { functor :> Functor F
         ; pure: forall {A}, A -> F A
         ; app: forall {A B: Type}, F (A -> B) -> F A -> F B where "n <*> m" := (app n m)
-        ; _: forall {A} (v: F A), pure id <*> v = v
-        ; _: forall {A B} (f: A -> B) (x: A), pure f <*> pure x = pure (f x)
-        ; _: forall {A B} (u: F(A -> B)) (y: A),
+        ; ap_identity: forall {A} (v: F A), pure id <*> v = v
+        ; ap_homomorphism: forall {A B} (f: A -> B) (x: A), pure f <*> pure x = pure (f x)
+        ; ap_interchange: forall {A B} (u: F(A -> B)) (y: A),
             (u <*> pure y) = (pure (fun f => f y) <*> u)
-        ; _: forall {A B C} (u: F (B -> C)) (v: F (A -> B)) w,
+        ; ap_composition: forall {A B C} (u: F (B -> C)) (v: F (A -> B)) w,
             u <*> (v <*> w) = pure compose <*> u <*> v <*> w
       }.
     
@@ -66,7 +64,7 @@ Module TypeClasses.
   Section Monad.
 
     Reserved Notation "x >>= y" (at level 70).
-
+ 
     Class Monad (M: Type -> Type) :=
       { applicative :> Applicative M
         ; unit: forall {A}, A -> M A
@@ -176,52 +174,80 @@ Module TypeClasses.
       }
       { intros ? ? ? ? ?; apply functional_extensionality; intros x.
         destruct x; unfold compose.
-        assert (EQ: (fun x : A => f (g x)) = (f (.) g) ) by reflexivity.
-        rewrite EQ; clear EQ.
-        rewrite functor_property; reflexivity. 
+        assert (Eq: (fun x : A => f (g x)) = (f (.) g)) by reflexivity.
+        rewrite Eq; rewrite functor_property; reflexivity. 
       } 
     Defined.
-
+    
     Instance composition_applicative:
       forall F `{! Applicative F} G `{! Applicative G}, Applicative (@composition F G) :=
       { pure A a := Comp (pure (pure a)) 
-        ; app A B f x :=
+        ; app _ _ f x :=
             match f, x with
-            | Comp f, Comp x => Comp (app (fmap app f) x)
+            | Comp f, Comp x => Comp (app (app (pure app) f) x)
             end
       }.
     Proof.
       { intros; destruct v.
-        destruct Applicative0, Applicative1.
-        destruct functor0, functor1.
-        admit.
+        rewrite ap_homomorphism.
+        assert(Eq: (app (pure id): G A -> G A) = id ).
+        { extensionality x; intros; rewrite ap_identity; reflexivity. } 
+        rewrite Eq, ap_identity.
+        reflexivity.
       }
-      { intros.
-        destruct Applicative0, Applicative1.
-        destruct functor0, functor1.
-        unfold app, pure, fmap.
-        
-        admit. }
+      { intros; repeat rewrite ap_homomorphism; reflexivity. } 
       { intros; destruct u.
-        
-        admit. }
-      {         destruct u as [u], v as [v], w as [w].
-                
-        destruct Applicative0, Applicative1.
-        destruct functor0, functor1.
-                compute.
-                
-        admit. }
-    Admitted.
+        rewrite ap_homomorphism.
+        assert(Eq: (app (pure (fun f => f y)): G (A -> B) -> G B)
+                   = (fun u => app u (pure y))).
+        { intros.
+          change (app (pure (fun x: A -> B => x y)))
+            with (fun u => (app (pure (fun x: A -> B => x y))) u).
+          extensionality H.
+          rewrite <- ap_interchange.
+          reflexivity.
+        } 
+        rewrite Eq; clear Eq.
+        rewrite ap_interchange.
+        rewrite ap_composition.
+        rewrite ap_homomorphism.
+        rewrite ap_interchange.
+        rewrite ap_homomorphism.
+        assert (Eq: (compose (fun x : G A -> G B => x (pure y)) app)
+                    = ((fun u0 : G (A -> B) => app u0 (pure y)))).
+        { unfold compose.
+          extensionality fx.
+          reflexivity. }
+        elim Eq.
+        reflexivity. 
+      } 
+      { intros.
+        destruct u as [u], v as [v], w as [w].
+        repeat (rewrite ap_homomorphism || rewrite ap_composition).
+        rewrite ap_interchange.
+        rewrite ap_composition.
+        rewrite ap_homomorphism.
+        unfold compose. 
+        fold (@compose A B C).
+        replace (fun (x : G (B -> C)) (x0 : G (A -> B))
+                 => app (app (app (pure compose) x) x0))
+          with (fun (x : G (B -> C)) (x0 : G (A -> B)) x1 => app x (app x0 x1)).
+        rewrite ap_homomorphism.
+        split.
+        extensionality H. extensionality I. extensionality J.
+        rewrite <- ap_composition.        
+        reflexivity.
+      }
+    Defined.
 
     Class Traversable (T: Type -> Type) :=
       { functorTraversable :> Functor T 
         ; foldableTraversable :> Foldable T
         ; traverse: forall {A} {B} {F} `{! Applicative F},
             (A -> F B) -> T A -> F (T B)
-        ; naturality: forall (A B: Type) (F: Type -> Type) `{Applicative F} 
-                    (f: A -> F B) (t: forall {A}, F A -> F A)
-                    `{! ApplicativeTransformation (@t)},
+        ; tr_naturality: forall (A B: Type) (F: Type -> Type) `{Applicative F} 
+                             (f: A -> F B) (t: forall {A}, F A -> F A)
+                             `{! ApplicativeTransformation (@t)},
             ((t (.) (traverse f))) = ((traverse (t (.) f))) 
 
         ; _: forall {A: Type}, (@traverse A _ _ _ (Ident)) = Ident
@@ -255,7 +281,7 @@ Module TypeClasses.
     Instance list_functor: (Functor list) :=
       { fmap A B f a := map f a }.
     Proof.
-      { intros A; apply functional_extensionality; intros xs.
+      { intros A; extensionality xs.
         induction xs.
         - reflexivity.
         - simpl; rewrite IHxs; compute; reflexivity.
@@ -267,7 +293,7 @@ Module TypeClasses.
       }
     Defined.
     
-    Instance option_applicative: (Applicative option) :=
+    Global Instance option_applicative: (Applicative option) :=
       { pure {A} (x: A) := Some x
         ; app {A B} f x :=
             match f, x with
@@ -281,6 +307,15 @@ Module TypeClasses.
       - intros; destruct u; reflexivity.
       - intros; destruct u, v, w; reflexivity.
     Defined.
+
+    Instance option_foldable: (Foldable option) :=
+      { foldMap := _ }.
+    Proof. 
+      intros.
+      destruct Monoid0, X0.
+      apply X; assumption.
+      apply mempty0.
+    Defined.
     
     Instance option_traversable: (Traversable option) :=
       { traverse {A B} {F} _ (f: A -> F B) (some: option A) := 
@@ -290,7 +325,6 @@ Module TypeClasses.
           end
       }.
     Proof.
-      { admit. }
       { intros ? ? ? ? ? ? ?; apply functional_extensionality; intros x.
         destruct x; unfold compose.
         - destruct ApplicativeTransformation0.
@@ -300,22 +334,17 @@ Module TypeClasses.
       { intros ?; apply functional_extensionality; intros x.
         destruct x; reflexivity. } 
       { intros ? ? ? ? ? x. 
-        destruct x.
-        { unfold compose.
-          unfold app.
-          unfold identity_applicative. compute.
-          destruct (f a). destruct (g b). 
-          admit.
-
-      }
-    Admitted.
+        destruct x; unfold compose.
+        - compute; destruct (f a), (g b); reflexivity.
+        - compute; reflexivity.
+      } 
+    Defined.
        
   End Traversable.
   
   Section Option.
     
-    
-(*    Instance option_monad: (Monad option) :=
+    Instance option_monad: (Monad option) :=
       { unit A a := Some a;
         bind A B a f :=
           match a with
@@ -329,19 +358,6 @@ Module TypeClasses.
       - destruct m; reflexivity.
       - destruct m; try destruct (k a); reflexivity.
     Defined.
-
-
-  End Option.
-
-  Goal
-    forall m,
-      Monad m ->
-      Applicative m
-  .
-  Proof.
-    intros. 
-    destruct Monad.
- *)
   
   End Option.
   
