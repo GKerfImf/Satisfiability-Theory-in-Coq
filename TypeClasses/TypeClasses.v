@@ -59,6 +59,49 @@ Module TypeClasses.
     
   End Monad.
 
+  Section Comonad.
+
+    Reserved Notation "x =>> y" (at level 70).
+ 
+    Class Comonad (W: Type -> Type) :=
+      { functorComonad :> Functor W
+        ; coreturn: forall {A}, W A -> A
+        ; cojoin: forall {A}, W A -> W (W A)
+        ; extend {A B} (x: W A) (f: W A -> B) :=
+            fmap f (cojoin x) where "x =>> f" := (extend x f)
+        ; _: forall {A}, coreturn (.) cojoin = @id (W A)
+        ; _: forall {A}, fmap coreturn (.) cojoin = @id (W A)
+        ; _: forall {A}, (@cojoin (W A)) (.) cojoin = fmap cojoin (.) cojoin
+      }.
+    
+  End Comonad.
+
+  Section Prod.
+
+    Instance prod_functor {A}: Functor (prod A) :=
+      { fmap _ _ f x := (fst x, f (snd x)) }.
+    Proof.
+      { intros B; extensionality x.
+        destruct x; reflexivity. }
+      { intros X1 X2 X3 f g.
+        extensionality x; compute.
+        reflexivity. } 
+    Defined.
+    
+    Instance prod_comonad {A}: Comonad (prod A) :=
+      { coreturn := @snd A;
+        cojoin _ wx := (fst wx, wx)
+      }.
+    Proof.
+      { intros B; extensionality x; reflexivity. }
+      { intros B. extensionality x.
+        destruct x; compute; reflexivity. }
+      { intros B.
+        extensionality x. reflexivity. }
+    Defined.
+
+  End Prod.
+
   
 (*  Section Transformers.
 
