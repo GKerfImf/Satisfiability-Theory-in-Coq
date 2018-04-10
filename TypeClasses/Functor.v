@@ -8,7 +8,7 @@ Module Functor.
   Definition id {A} (x: A) := x.
 
   (* ??? *)
-  Reserved Notation "f (.) g" (at level 70, right associativity). (* TODO: associativity *)
+  Reserved Notation "f (.) g" (at level 30, right associativity). (* TODO: associativity *)
   Definition compose {A B C} (f: B -> C) (g: A -> B) := fun x => f (g x).
   Infix "(.)" := compose .
 

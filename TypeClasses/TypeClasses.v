@@ -13,6 +13,7 @@ Module TypeClasses.
 
   Import Identity Functor Applicative. 
 
+  
   Inductive composition {F: Type -> Type} {G: Type -> Type} {A: Type}: Type :=
     Comp: (F (G A)) -> @composition F G A.
 
@@ -58,6 +59,7 @@ Module TypeClasses.
     
   End Monad.
 
+  
 (*  Section Transformers.
 
     Class MonadTrans (M: Type -> Type) (T: _) :=
@@ -103,34 +105,6 @@ Module TypeClasses.
         ; _: forall {A B: Type} (x:_ ) (y: _), t (app x y) = @app F _ A B (t x) (t y)
       }.
  
-
-    Instance identity_functor: (Functor (@identity)) :=
-      { fmap A B f a := 
-          match a with
-          | Ident a => Ident (f a)
-          end
-      }.
-    Proof.
-      { intros A; apply functional_extensionality; intros x.
-        destruct x; reflexivity. }
-      { intros ? ? ? ? ?; apply functional_extensionality; intros x.
-        destruct x; reflexivity. }
-    Defined.
-
-    Instance identity_applicative: (Applicative (@identity)) :=
-      { pure A a := Ident a
-        ; app A B f a :=
-            match f, a with
-            | Ident f, Ident a => Ident (f a)
-            end
-      }.
-    Proof.
-      { intros; destruct v; reflexivity. } 
-      { intros; reflexivity. }
-      { intros; destruct u; reflexivity.  }
-      { intros; destruct u, v, w; reflexivity. }
-    Defined.
-
     
     Instance composition_functor:
       forall F `{! Functor F} G `{! Functor G}, Functor (@composition F G) :=
