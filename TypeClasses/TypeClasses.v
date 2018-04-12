@@ -1,6 +1,6 @@
 Require Import Init.Datatypes Logic.FunctionalExtensionality.
 Require Import List.
-Require Import Functor Applicative Foldable Monad Comonad.
+Require Import Functor Applicative Foldable Monoid Monad Comonad.
 Require Import Identity Composition.
 
 Set Implicit Arguments.
@@ -8,8 +8,14 @@ Set Implicit Arguments.
 
 Module TypeClasses.
 
-  Import Identity Composition Functor Applicative Monad Comonad Foldable. 
+  Import Identity Composition Functor Applicative Monoid Monad Comonad Foldable. 
+
+  Section Definitions.
+
     
+    
+  End Definitions.
+  
   (* TODO: add compose *)
 
   (*  (* TOOD: comment *)
