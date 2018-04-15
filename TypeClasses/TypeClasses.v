@@ -1,20 +1,25 @@
 Require Import Init.Datatypes Logic.FunctionalExtensionality.
-Require Import List.
+Require Import Lists.List.
 Require Import Functor Applicative Foldable Monoid Monad Comonad.
 Require Import Identity Composition.
+Require Import Coq.Arith.PeanoNat.
 
 Set Implicit Arguments.
 
 
 Module TypeClasses.
 
-  Import Identity Composition Functor Applicative Monoid Monad Comonad Foldable. 
+  Import ListNotations Functor Applicative Monoid Monad Comonad Foldable. 
 
   Section Definitions.
 
     
-    
   End Definitions.
+
+  Section Examples.
+
+
+  End Examples.
   
   (* TODO: add compose *)
 
