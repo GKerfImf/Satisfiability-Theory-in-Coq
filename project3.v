@@ -6,6 +6,8 @@ Lemma TODO:
   False.
 Proof. Admitted.
 
+(*** Util. *)
+
 (* This tactic feeds the precondition of an implication in order to derive the conclusion
    (taken from http://comments.gmane.org/gmane.science.mathematics.logic.coq.club/7013).
 
@@ -92,7 +94,6 @@ Instance list_in_dec {T: Type} (x: T) (xs: list T):
 Proof.
   intros D; apply in_dec; exact D.
 Defined.
-
 
 Instance inclusion_dec {T: Type} (xs1 xs2: list T):
   eq_dec T -> dec (incl xs1 xs2).
@@ -186,8 +187,7 @@ Proof.
   decide (n = m).
   - left; rewrite e; reflexivity.
   - right; intros C; apply n0; inversion C; reflexivity.
-Defined.
- 
+Defined. 
 
 (* *)
 Definition variables := list variable.
@@ -202,18 +202,18 @@ Definition variables := list variable.
 
    My plan is to introduce a notion of "equivalence" and use it everywhere instead of equality. 
 
- *)
+*)
 (* List be cause I want the whole thing to be computable *)
 Definition assignment := list (variable * bool).
 Definition assignments := list assignment.
 
 (* TODO: comment *)
-Fixpoint vars_in (α: assignment): variables := map fst α.
+Fixpoint vars_in (α: assignment): variables :=
+  map fst α.
 
 (* TODO: def *)
 (* TODO: comment *)
 Reserved Notation "v / α ↦ b" (at level 0).
-
 Inductive mapsto: variable -> assignment -> bool -> Prop := 
 | maps_hd: forall var α_tl b,
     var/((var, b) :: α_tl) ↦ b
@@ -223,8 +223,8 @@ where "v / α ↦ b" := (mapsto v α b).
 
 Lemma todo2:
   forall (α: assignment) (v: variable) (b1 b2: bool),
-  (v) / α ↦ (b1) ->
-  (v) / α ↦ (b2) ->
+  v / α ↦ b1 ->
+  v / α ↦ b2 ->
   b1 = b2.
 Proof.
   intros ? ? ? ? M1 M2.
@@ -233,34 +233,22 @@ Proof.
   { destruct a.
     admit. }
 Admitted.
-  
-Lemma kek:
-  forall v v' b α,
-    v el vars_in ((v',b)::α) ->
-    {v = v'} + {v <> v' /\ v el vars_in α}. 
+
+Lemma mapsto_dec:
+  forall (α: assignment) (v: variable),
+    v el (vars_in α) ->
+    {v / α ↦ true} + {v / α ↦ false}. 
 Proof.
-  intros.
-  decide (v = v') as [EQ | NEQ].
-  - left; assumption.
-  - right; split; [assumption | ].
-    destruct H; [exfalso | ]. 
-    apply NEQ; rewrite <- H; reflexivity.
-    destruct α; simpl in *; auto.
-Defined.
-  
-(* TODO: comment *)
-Definition mapstob (v: variable) (α: assignment) (H: v el (vars_in α)): {b | v / α ↦ b}.
-Proof.
-  induction α.
-  { inversion H. }
-  { destruct a.
-    apply kek in H.
-    destruct H as [EQ | [NEQ IN]].
-    - subst v0.
-      exists b; constructor.
-    - apply IHα in IN; clear IHα.
-      destruct IN as [c EV].
-      exists c; constructor; auto.
+  induction α; intros v1 ?. 
+  { inversion_clear H. }
+  { destruct a as [v2 b].
+    decide (v1 = v2); [subst | ].
+    { destruct b; [left|right]; constructor. } 
+    { specialize (IHα v1).
+      feed IHα.
+      inversion_clear H; [exfalso; eauto | destruct α; eauto]. 
+      destruct IHα as [IH1|IH2]; [left|right]; constructor; auto.
+    } 
   }
 Defined.
 
@@ -270,14 +258,12 @@ Proof.
   right; left; reflexivity. 
 Defined.
 
-Compute (proj1_sig (mapstob (V 1) [(V 0, true); (V 1, true); (V 2, false)] m1)).
+(* Compute (proj1_sig (mapstob (V 1) [(V 0, true); (V 1, true); (V 2, false)] m1)). *)
 
- 
 (* TODO: name *)
 (* TODO: comment *)
 Definition assignment_on_variables (vs: list variable) (α: assignment) :=
   forall v, v el vs -> exists b, v / α ↦ b.
-
 
 
 (* TODO: comment *)
@@ -309,24 +295,13 @@ Admitted. *)
    So, I intrtoduce a new predicate for IN. 
  *)
 
-(* TODO: notion of cardinality *)
-
+(* *)
 Definition mem_assign (vs: variables) (α: assignment) (αs: assignments): Prop :=
   mem_e (equiv_assignments vs) α αs.
-
-(* Notation "x '∈_≡' A" := (elem x A) (at level 70). *)
-
-(* TODO: comment *)
-(* Definition list_of_canonical_assignments (vs: variables) (αs: assignments) :=
-  forall α, mem vs α αs -> canonical_assignment α.
-*)
-
 
 (* *)
 Definition dupfree_list_of_assignments (vs: variables) (αs: assignments): Prop :=
   dupfree_e (equiv_assignments vs) αs.
-
-
 
 
 
@@ -601,12 +576,9 @@ Definition sat_kek (ϕ: formula) (α: assignment) (SET: sets_all_variables ϕ α
   induction ϕ.
   - exists false. constructor.
   - exists true. constructor.
-  - specialize (SET v).
-    assert (EL: v el [v]); [left; reflexivity | ].
-    apply SET in EL; clear SET.
-    assert (b := mapstob v α EL).
-    destruct b as [b MAPS].
-    exists b; constructor; assumption.
+  - feed (SET v).
+    { left; reflexivity. }
+    destruct (mapsto_dec α v SET) as [M|M]; [exists true| exists false]; constructor; assumption.
   - destruct IHϕ as [b EV].
     simpl in SET; assumption.
     exists (negb b); constructor; rewrite Bool.negb_involutive; assumption.
