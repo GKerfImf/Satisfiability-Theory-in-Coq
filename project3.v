@@ -201,7 +201,6 @@ Definition var_ge (a b: variable) :=
 (* *)
 Definition variables := list variable.
 
-
 (* TODO: comment *)
 (* Basically, here we have a choice (?) 
    We can introduce a strong type for assignments, in this case equality will be easy to decide, 
@@ -219,13 +218,6 @@ Definition assignments := list assignment.
 
 (* TODO: comment *)
 Fixpoint vars_in_assignment (α: assignment): variables := map fst α.
-
-(* TODO: comment *)
-(* Inductive canonical_assignment: assignment -> Prop :=
-| nil_as: canonical_assignment []
-| sin_as: forall (v: variable) (b: bool), canonical_assignment [(v,b)]
-| con_as: forall (h: variable) (b: bool) (tl: assignment) (v: variable) (c: bool),
-    lt h v -> canonical_assignment ((h,b)::tl) -> canonical_assignment ((v,c)::(h,b)::tl). *)
 
 (* TODO: def *)
 (* TODO: comment *)
