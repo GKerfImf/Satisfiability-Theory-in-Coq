@@ -6,6 +6,30 @@ Lemma TODO:
   False.
 Proof. Admitted.
 
+Lemma TODO1:
+  False.
+Proof. Admitted.
+
+Lemma TODO2:
+  False.
+Proof. Admitted.
+
+Lemma TODO3:
+  False.
+Proof. Admitted.
+
+Lemma TODO4:
+  False.
+Proof. Admitted.
+
+Lemma TODO5:
+  False.
+Proof. Admitted.
+
+Lemma TODO6:
+  False.
+Proof. Admitted.
+
 (*** Util. *)
 
 (* This tactic feeds the precondition of an implication in order to derive the conclusion
@@ -462,8 +486,8 @@ Definition sets_all_variables (ϕ: formula) (α: assignment) :=
 Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
   dupfree_a vs αs /\
   (forall α, α el αs -> sat_assignment ϕ α) /\
-  (forall α, sat_assignment ϕ α -> mem_a vs α αs) /\
-  (forall α, α el αs -> equi vs (vars_in α)). 
+  (forall α, sat_assignment ϕ α -> mem_a vs α αs) /\ (* TODO?: ∀ α, sat ϕ α -> ∃ β, α ≡ β ∧ β ∈ αs *)
+  (forall α, α el αs -> equi vs (vars_in α)). (* TODO: del this? *)
 
 
 (* TODO: fix leaves to vars *)
@@ -939,7 +963,7 @@ Admitted.
               = #sat (x ∧ ϕ[x ↦ T]) + #sat (¬x ∧ ϕ[x ↦ F])
               = #sat (ϕ[x ↦ T]) + #sat (ϕ[x ↦ F])
 
-*) 
+*)   
 Definition algorithm2:
   forall (ϕ: formula), {n: nat| number_of_sat_assignments ϕ n}.
 Proof.
@@ -959,7 +983,9 @@ Proof.
     
     exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2). 
     repeat split.
-    { exfalso; apply TODO. }
+    {
+      exfalso; apply TODO1.
+    }
     { intros; apply SW; clear SW.
       destruct (in_app_or _ _ _ H) as [EL|EL]; clear H.
       { apply ev_disj_tl, ev_conj_t.
@@ -990,104 +1016,45 @@ Proof.
       inversion_clear H; inversion_clear H0.
       { 
         
-
-        (* assert(HHH: x nel leaves (ϕ [x ↦ T])). admit. *)
-
         apply LAA1 in H1.
-        destruct LAA1 as [_ [_ [_ Hd]]].
-
-        
         inversion_clear H.
 
         apply mem_app_equiv; left. 
         
+        clear LEN2 LAA1 LAA2 αs2 LEN1.
+        induction αs1; eauto 2.
 
-           
-        clear LEN2 LAA2 αs2.
-        apply mem_map_iff.
-
-        exists α; split. 
-        { intros v EL.
-          decide (v = x).
-          { subst v. exists true; split. constructor. assumption. }
-          { exfalso; apply TODO. }
+        inversion_clear H1.
+        left.
+        intros v EL.
+        decide (x = v).
+        { subst.
+          exists true; split.
+          assumption. constructor.
         }
-        { assert (HH : forall α : assignment, α el αs1 -> x nel (vars_in α)).
-          admit.
-          clear Hd. 
-          
-          unfold mem_a in *.
-          clear LEN1; induction αs1.
-          { eauto. } 
-          { destruct H1.
-            unfold equiv_assignments in H.
-            { clear IHαs1. 
-              
-
-            }
-            { right.
-              apply IHαs1; eauto 2.
-              intros. apply HH. right. assumption.
-            } 
-
-
-          assert (DEC: {α = a} + {a el αs1}). admit. 
-          destruct DEC as [EQ|EL].
-          subst a.
-          
-          
-          specialize (HH a).
-          feed HH. left;reflexivity.
-          
-          left.
-          
-          
-          intros v EL.
-          apply H.
-          
-          
-          decide (x = v). subst.
-          { admit. }
-          { admit. }
-          
-          
-          
-          right.
-          
-          eauto 2.
-          
-        }
-            
-      admit. }
-    { admit. }
-    { admit. }
-    (*
-      
-    {
-
-
-      {
+        { specialize (H v).
+          assert (E : x <> v -> v el leaves ϕ -> v el leaves (ϕ[x ↦ T])).
+          { exfalso; apply TODO2. }
+          assert (EE := E n EL). clear E.
+          feed H; [assumption | ].
+          destruct H as [b [EV1 EV2]].
+          exists b. split. assumption. constructor; eauto .
+        }        
         { 
-        
-          {
-            
-           
-       
-          }
-          { 
-            
-            exfalso; apply TODO.
-          }
+          right.
+          apply IHαs1; eauto 2.
         }
-      } *)
-    
-
-
+      } 
+      { exfalso; apply TODO3.
+      }
+    } 
+    { exfalso; apply TODO4. }
+    { exfalso; apply TODO5. }    
     { rewrite app_length, map_length, map_length.
       rewrite <- LEN1, <- LEN2; reflexivity.
     } 
   } 
-Admitted.
+Defined.
 
 
 Compute (proj1_sig (algorithm2 (F ∨ T))).
