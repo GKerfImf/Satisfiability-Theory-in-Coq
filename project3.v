@@ -187,16 +187,7 @@ Proof.
   - left; rewrite e; reflexivity.
   - right; intros C; apply n0; inversion C; reflexivity.
 Defined.
-
-(* TODO: comment *)
-Definition var_lt (a b: variable) :=
-  match a,b with
-  | V a, V b => a < b
-  end.
-
-(* TODO: comment *)
-Definition var_ge (a b: variable) :=
-  let '(V a, V b) := (a,b) in a >= b.
+ 
 
 (* *)
 Definition variables := list variable.
