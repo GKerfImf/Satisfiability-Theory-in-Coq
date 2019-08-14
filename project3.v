@@ -217,7 +217,7 @@ Definition assignment := list (variable * bool).
 Definition assignments := list assignment.
 
 (* TODO: comment *)
-Fixpoint vars_in_assignment (α: assignment): variables := map fst α.
+Fixpoint vars_in (α: assignment): variables := map fst α.
 
 (* TODO: def *)
 (* TODO: comment *)
@@ -245,8 +245,8 @@ Admitted.
   
 Lemma kek:
   forall v v' b α,
-    v el vars_in_assignment ((v',b)::α) ->
-    {v = v'} + {v <> v' /\ v el vars_in_assignment α}. 
+    v el vars_in ((v',b)::α) ->
+    {v = v'} + {v <> v' /\ v el vars_in α}. 
 Proof.
   intros.
   decide (v = v') as [EQ | NEQ].
@@ -258,7 +258,7 @@ Proof.
 Defined.
   
 (* TODO: comment *)
-Definition mapstob (v: variable) (α: assignment) (H: v el (vars_in_assignment α)): {b | v / α ↦ b}.
+Definition mapstob (v: variable) (α: assignment) (H: v el (vars_in α)): {b | v / α ↦ b}.
 Proof.
   induction α.
   { inversion H. }
@@ -274,7 +274,7 @@ Proof.
 Defined.
 
 
-Lemma m1: (V 1) el (vars_in_assignment ([(V 0, true); (V 1, false); (V 2, false)])).
+Lemma m1: (V 1) el (vars_in ([(V 0, true); (V 1, false); (V 2, false)])).
 Proof.
   right; left; reflexivity. 
 Defined.
@@ -321,7 +321,7 @@ Admitted. *)
 (* TODO: notion of cardinality *)
 
 Definition mem_assign (vs: variables) (α: assignment) (αs: assignments): Prop :=
-  mem (equiv_assignments vs) α αs.
+  mem_e (equiv_assignments vs) α αs.
 
 (* Notation "x '∈_≡' A" := (elem x A) (at level 70). *)
 
@@ -333,7 +333,7 @@ Definition mem_assign (vs: variables) (α: assignment) (αs: assignments): Prop 
 
 (* *)
 Definition dupfree_list_of_assignments (vs: variables) (αs: assignments): Prop :=
-  dupfree (equiv_assignments vs) αs.
+  dupfree_e (equiv_assignments vs) αs.
 
 
 
@@ -452,7 +452,7 @@ Definition unsat_assignment (ϕ: formula) (α: assignment) :=
 Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
   dupfree_list_of_assignments vs αs /\
   (forall α, mem_assign vs α αs <-> sat_assignment ϕ α) /\
-  (forall α, mem_assign vs α αs -> vs = (vars_in_assignment α) ). (* TODO: fix *)
+  (forall α, mem_assign vs α αs -> vs = (vars_in α) ). (* TODO: fix *)
 
 (* Variables are important.
    
@@ -544,7 +544,7 @@ where "ϕ [ x ↦ f ]" := (substitute ϕ x f).
 
 
 Definition sets_all_variables (ϕ: formula) (α: assignment) := 
-  incl (leaves ϕ) (vars_in_assignment α).
+  incl (leaves ϕ) (vars_in α).
 
 
 
@@ -654,7 +654,7 @@ Admitted. *)
 
 Definition sat_kek_kek (ϕ: formula) (α: assignment): option {b: bool | formula_eval ϕ α b}.
 Proof.
-  decide (incl (leaves ϕ) (vars_in_assignment α)) as [IN | NIN].
+  decide (incl (leaves ϕ) (vars_in α)) as [IN | NIN].
   { apply Some.
     apply sat_kek.
     assumption. }
@@ -831,7 +831,7 @@ Admitted.
 
 Lemma substitute_equiv':
   forall (ϕ ψ1 ψ2: formula) (v: variable),
-    (forall (α: assignment) (b: bool), ℇ (ψ1) α ≡ b -> ℇ (ψ2) α ≡ b) -> 
+    (forall (α: assignment) (b: bool),        ℇ (ψ1) α ≡ b ->        ℇ (ψ2) α ≡ b) -> 
     (forall (α: assignment) (b: bool), ℇ (ϕ[v ↦ ψ1]) α ≡ b -> ℇ (ϕ[v ↦ ψ2]) α ≡ b).
 Proof.
   induction ϕ; intros ? ? ? EQ ? ?; simpl in *.
@@ -1011,7 +1011,9 @@ Proof.
     
     exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2). 
     split. 
-    { destruct LAA1 as [DF1 [LA1 VAR1]].
+    {
+
+      (* destruct LAA1 as [DF1 [LA1 VAR1]].
       destruct LAA2 as [DF2 [LA2 VAR2]].
       split.
 
@@ -1119,12 +1121,14 @@ Proof.
             exfalso; apply TODO.
           }
         }
-      }
+      } *)
+
+      admit.
     }
     { rewrite app_length, map_length, map_length.
       rewrite <- LEN1, <- LEN2; reflexivity. } 
   } 
-Defined.
+Admitted.
 
 
 Compute (proj1_sig (algorithm2 (F ∨ T))).
@@ -1231,18 +1235,18 @@ Proof.
   apply size_recursion with formula_size.
   intros ϕ IH.
 
-  destruct (todo6 ϕ) as [Z|POS].
-  destruct (todo8 _ Z) as [Tr|Fl].
+  destruct (formula_size_dec ϕ) as [Z|POS].
+  destruct (zero_size_formula_constant_dec _ Z) as [Tr|Fl].
   { exists [[Atom true]].
     assert(EQ:= dnf_representation_of_T_exists). 
     intros; split; intros.
-    - apply EQ, T; assumption.
-    - apply T, EQ; assumption. }
+    - apply EQ, Tr; assumption.
+    - apply Tr, EQ; assumption. }
   { destruct (dnf_representation_of_F_exists) as [ψ EQ]. 
     exists ψ.
     intros; split; intros.
-    - apply EQ, F; assumption.
-    - apply F, EQ; assumption. }
+    - apply EQ, Fl; assumption.
+    - apply Fl, EQ; assumption. }
   { assert (V := get_var _ POS).
     destruct V as [x IN].
     assert (EQ := switch ϕ x).
@@ -1355,7 +1359,7 @@ Admitted.
 
 
 
-Lemma l0:
+(*Lemma l0:
   forall ϕ α,
     incl (vars_in_formula ϕ) (vars_in_assignment α) ->
     {eval ϕ α true} + {eval ϕ α false}.
@@ -1370,11 +1374,11 @@ Proof.
   - admit. 
 Admitted.
 
+*)
 
 
 
-
-Lemma l1:
+(* Lemma l1:
   forall ϕ1 ϕ2 α, 
   eval (ϕ1 ∨ ϕ2) α true -> eval ϕ1 α true \/ eval ϕ2 α true.
 Proof.
@@ -1452,7 +1456,7 @@ Proof.
   } 
   admit. 
 Admitted.
-
+*)
 
 (* As you can see, we have quite weak type for assignment. 
    Therefore, we have a lot of assignments that are equivalent
