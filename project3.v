@@ -72,6 +72,11 @@ Proof.
   intros x y. hnf. decide equality.
 Defined.
 
+Definition equi {X: Type} (A B: list X) : Prop :=
+  incl A B /\ incl B A.
+
+Hint Unfold equi.
+
 Lemma inclusion_app {T: Type} (xs1 xs2 xs: list T): 
   incl (xs1 ++ xs2) xs ->
   incl xs1 xs /\ incl xs2 xs.
@@ -122,14 +127,12 @@ Proof.
   }
 Defined.
 
-
 Lemma singl_in {X: Type} (x y: X):
   x el [y] -> x = y.
 Proof.
   intros.
   inversion_clear H; [subst; reflexivity | inversion_clear  H0].
 Qed.
-  
 
 (*** TODO *)
 (*** Predicates on lists with equivalence *)
@@ -140,11 +143,11 @@ Fixpoint mem_e {X: Type} (R: X -> X -> Prop) (x: X) (xs: list X): Prop :=
   | h::tl => (R x h) \/ (mem_e R x tl)
   end.
 
-Definition incl_e {X: Type} (R: X -> X -> Prop) (xs1 xs2: list X) :=
+(* Definition incl_e {X: Type} (R: X -> X -> Prop) (xs1 xs2: list X) :=
   forall x, mem_e R x xs1 -> mem_e R x xs2.
 
 Definition equiv_e {X: Type} (R: X -> X -> Prop) (xs1 xs2: list X) :=
-  incl_e R xs1 xs2 /\ incl_e R xs2 xs1. 
+  incl_e R xs1 xs2 /\ incl_e R xs2 xs1.  *)
 
   
 Lemma mem_app:
@@ -211,9 +214,9 @@ Definition assignments := list assignment.
 Fixpoint vars_in (α: assignment): variables :=
   map fst α.
 
-(* TODO: def *)
 (* TODO: comment *)
-Reserved Notation "v / α ↦ b" (at level 0).
+Reserved Notation "v / α ↦ b" (at level 10).
+
 Inductive mapsto: variable -> assignment -> bool -> Prop := 
 | maps_hd: forall var α_tl b,
     var/((var, b) :: α_tl) ↦ b
@@ -260,14 +263,15 @@ Defined.
 
 (* Compute (proj1_sig (mapstob (V 1) [(V 0, true); (V 1, true); (V 2, false)] m1)). *)
 
-(* TODO: name *)
-(* TODO: comment *)
+(* TODO: fix *)
 Definition assignment_on_variables (vs: list variable) (α: assignment) :=
-  forall v, v el vs -> exists b, v / α ↦ b.
+  equi vs (vars_in α).
+
+(*   forall v, v el vs -> exists b, v / α ↦ b. *)
 
 
 (* TODO: comment *)
-Lemma assignments_on_vars_dec:
+(* Lemma assignments_on_vars_dec:
   forall vs α, dec (assignment_on_variables vs α).
 Proof.
   induction vs; intros.
@@ -277,8 +281,9 @@ Proof.
       destruct p.
       admit.
   - admit. 
-Admitted.
+Admitted. *)
 
+(* TODO: fix *)
 (* TODO: comment *)
 Definition equiv_assignments (vs: variables) (α1 α2: assignment) :=
   forall v, v el vs -> exists b, v / α1 ↦ b /\ v / α2 ↦ b.
@@ -296,24 +301,26 @@ Admitted. *)
  *)
 
 (* *)
-Definition mem_assign (vs: variables) (α: assignment) (αs: assignments): Prop :=
+Definition mem_a (vs: variables) (α: assignment) (αs: assignments): Prop :=
   mem_e (equiv_assignments vs) α αs.
 
 (* *)
-Definition dupfree_list_of_assignments (vs: variables) (αs: assignments): Prop :=
+Definition dupfree_a (vs: variables) (αs: assignments): Prop :=
   dupfree_e (equiv_assignments vs) αs.
 
 
+(* Definition incl_a (vs: variables) (αs1 αs2: assignments): Prop :=
+  incl_e (equiv_assignments vs) αs1 αs2.
+
+Definition equiv_a (vs: variables) (αs1 αs2: assignments): Prop :=
+  equiv_e (equiv_assignments vs) αs1 αs2. *)
+  
 
 (* Section Example1.
-
   Let x1 := V 0.
   Let x2 := V 1.
   Let x3 := V 2.
-
-
   Compute (all_assignments_on [x1; x2; x3]).
-
   Goal assignment_on_variables [x1; x2; x3] [(x1, false); (x2, true); (x3, false)].
   Proof.
     intros.
@@ -331,21 +338,15 @@ Definition dupfree_list_of_assignments (vs: variables) (αs: assignments): Prop 
       inversion_clear H3.
     }
   Admitted.
-
   Goal equiv_assignments [x1; x2; x3] 
        [(x1, false); (x2, true); (x3, false)]
        [(x1, false); (x3, false); (x2, true)]. 
   Proof. Admitted.
-
-  
   Goal equiv_assignments [x1; x3] 
        [(x1, false); (x2, true); (x3, false)]
        [(x1, false); (x2, false); (x3, false)].
-  Proof. Admitted.
-  
+  Proof. Admitted.  
 End Example1. *)
-
-
 
 
 (*** Formulas *)
@@ -358,7 +359,6 @@ Inductive formula :=
 | Neg: formula -> formula
 | Conj: formula -> formula -> formula
 | Disj: formula -> formula -> formula.
-
   
 (* Supplementary notation for formulas. *)
 Notation "[| x |]" := (Var x) (at level 0).
@@ -369,9 +369,8 @@ Notation "x '∨' y" := (Disj x y) (at level 41, left associativity).
 Definition xor (ϕl ϕr: formula) := ((ϕl ∧ ¬ ϕr) ∨ (¬ ϕl ∧ ϕr)). 
 Notation "x '⊕' y" := (xor x y) (at level 41, left associativity).
 
-(* TODO: *)
-(* Definition impl (ϕl ϕr: formula) := ((ϕl ∧ ¬ ϕr) ∨ (¬ ϕl ∧ ϕr)). 
-Notation "x '⊕' y" := (xor x y) (at level 41, left associativity). *)
+Definition impl (ϕl ϕr: formula) := ¬ϕl ∧ ϕr. 
+Notation "x '⇒' y" := (impl x y) (at level 41, left associativity).
 
 
 (* TODO: def *)
@@ -406,7 +405,6 @@ where "'ℇ' '(' ϕ ')' α ≡ b" := (formula_eval ϕ α b).
 
 Hint Constructors formula_eval.
 
-
 (* *)
 Definition sat_assignment (ϕ: formula) (α: assignment) :=
   formula_eval ϕ α true.
@@ -414,11 +412,6 @@ Definition sat_assignment (ϕ: formula) (α: assignment) :=
 Definition unsat_assignment (ϕ: formula) (α: assignment) :=
   formula_eval ϕ α false.
 
-(* TODO: del vs? *)
-Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
-  dupfree_list_of_assignments vs αs /\
-  (forall α, mem_assign vs α αs <-> sat_assignment ϕ α) /\
-  (forall α, mem_assign vs α αs -> vs = (vars_in α) ). (* TODO: fix *)
 
 (* Variables are important.
    
@@ -450,15 +443,27 @@ Fixpoint leaves (ϕ: formula): variables :=
   | ϕ1 ∨ ϕ2 => leaves ϕ1 ++ leaves ϕ2
   end.
 
-(* TODO: comment *)
+(* => [V 0; V 1; V 0; V 1] *)
 Compute (leaves ([|V 0|] ⊕ [|V 1|])). 
 
 (* Definition of the size of a formula. *)
 Definition formula_size (ϕ: formula): nat :=
   length (leaves ϕ).
 
-(* TODO: comment *)
-Compute (formula_size ([|V 0|] ⊕ [|V 1|])). 
+(* => 4 *)
+Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
+
+Definition sets_all_variables (ϕ: formula) (α: assignment) := 
+  incl (leaves ϕ) (vars_in α).
+
+
+
+(* TODO: del vs? *)
+Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
+  dupfree_a vs αs /\
+  (forall α, α el αs -> sat_assignment ϕ α) /\
+  (forall α, sat_assignment ϕ α -> mem_a vs α αs) /\
+  (forall α, α el αs -> equi vs (vars_in α)). 
 
 
 (* TODO: fix leaves to vars *)
@@ -467,31 +472,11 @@ Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
     list_of_sat_assignments (leaves ϕ) ϕ αs /\
     length αs = n.
 
-
 Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
 
 
 
 
-Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
-  {v: variable | v el (leaves ϕ)}.
-Proof.
-  unfold formula_size in NE.
-  destruct (leaves ϕ).
-  { simpl in NE; omega. }
-  { exists v; left; reflexivity. }
-Defined.
-
-(* Actually it is not the original definition of the formula size. 
-   Hovewer, to do the induction, ... *)
-(* Fixpoint formula_size (ϕ: formula): nat :=
-  match ϕ with
-  | T => 1 | F => 1
-  | Var v => 1
-  | ¬ ϕ => 1 + formula_size ϕ
-  | ϕ1 ∧ ϕ2 => 1 + formula_size ϕ1 + formula_size ϕ2
-  | ϕ1 ∨ ϕ2 => 1 + formula_size ϕ1 + formula_size ϕ2
-  end. *)
 
 
 
@@ -509,9 +494,14 @@ Fixpoint substitute (ϕ: formula) (v: variable) (ψ: formula): formula :=
 where "ϕ [ x ↦ f ]" := (substitute ϕ x f).
 
 
-Definition sets_all_variables (ϕ: formula) (α: assignment) := 
-  incl (leaves ϕ) (vars_in α).
-
+Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
+  {v: variable | v el (leaves ϕ)}.
+Proof.
+  unfold formula_size in NE.
+  destruct (leaves ϕ).
+  { simpl in NE; omega. }
+  { exists v; left; reflexivity. }
+Defined.
 
 
 Definition equivalent (ϕ1 ϕ2: formula) :=
@@ -533,10 +523,10 @@ Admitted.
 
 
 Definition list_of_all_assignments (vs: variables) (αs: assignments) :=
-  dupfree_list_of_assignments vs αs /\
+  dupfree_a vs αs /\
   (forall α,
       assignment_on_variables vs α ->
-      mem_assign vs α αs).
+      mem_a vs α αs).
 
 
 
@@ -643,14 +633,8 @@ Definition algorithm1' (vs: variables) (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
                     | None => false
                     | Some (exist _ a _) => a
                     end)
-             (all_assignments_on vs)).
-  split; [ | reflexivity]; split. 
-  - admit. (* dupfree X -> dupfree (filter X). *)
-  - intros; split. 
-    + intros MEM.
-      admit (* x ∈ filter p xs <-> x ∈ xp ∧ p x. *).
-    + intros SAT.
-      admit.
+            (all_assignments_on vs)).
+  admit. 
 Admitted.
 
 
@@ -674,27 +658,6 @@ Lemma todo11:
   forall (ϕl ϕr: formula), formula_size (ϕl ∨ ϕr) = formula_size ϕl + formula_size ϕr.
 Proof.
 Admitted.
-
-(* Lemma todo3:
-  forall (ϕ: formula) (ψ: formula) (x: variable),
-    x el leaves ϕ -> 
-    formula_size (ϕ[x ↦ ψ]) = formula_size ϕ - 1 (* Wrong! *) + formula_size ψ.
-Proof.
-  induction ϕ; intros ? ? L.
-  { easy. } 
-  { easy. }
-  { apply singl_in in L; subst.
-    simpl; decide (v = v); [omega | easy]. }
-  { simpl; rewrite <- todo9, <- todo9.
-    apply IHϕ; easy. }
-  { simpl. rewrite todo10, todo10.
-    simpl in L; apply in_app_or in L.
-    destruct L as [L|L].
-    rewrite IHϕ1.
-    Search _ (_ el _).
-    simpl in L.
-    
-Admitted. *)
 
 
 Lemma todo3:
@@ -905,7 +868,7 @@ Defined.
 
 Lemma count3:
   number_of_sat_assignments T 1.
-Proof.
+Proof. 
   intros.
   exists [[]]; repeat split.  
   - intros C; inversion_clear C.
@@ -917,6 +880,8 @@ Proof.
     simpl in H0.
     exfalso; apply TODO. 
     inversion_clear H0.
+  - apply singl_in in H; subst.
+    simpl; intros v EL; assumption.
 Qed.
 
 Lemma count5:
@@ -935,6 +900,7 @@ Proof.
   - inversion_clear H.
   - inversion_clear H.  
   - inversion_clear H.
+  - exfalso; assumption.
 Qed. 
 
 Lemma count6:
@@ -945,6 +911,26 @@ Proof.
   intros.
 Admitted.
 
+
+
+Lemma todo13:
+  forall ϕ b v x α,
+    v nel (leaves ϕ) ->
+    ℇ (ϕ) α ≡ b <-> ℇ (ϕ) (v,x)::α ≡ b.
+Proof. Admitted.
+
+Lemma todo12:
+  forall ϕ v, 
+    v nel leaves (ϕ [v ↦ T]).
+Proof.
+Admitted.
+
+Lemma todo14:
+  forall ϕ v, 
+    v nel leaves (ϕ [v ↦ F]).
+Proof.
+Admitted.
+
 (* 
    The main idea of the algorithm is the following: 
        #sat F = 0
@@ -953,8 +939,7 @@ Admitted.
               = #sat (x ∧ ϕ[x ↦ T]) + #sat (¬x ∧ ϕ[x ↦ F])
               = #sat (ϕ[x ↦ T]) + #sat (ϕ[x ↦ F])
 
-*)
-
+*) 
 Definition algorithm2:
   forall (ϕ: formula), {n: nat| number_of_sat_assignments ϕ n}.
 Proof.
@@ -973,111 +958,121 @@ Proof.
     destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
     
     exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2). 
-    split. 
-    {
-
-      (* destruct LAA1 as [DF1 [LA1 VAR1]].
-      destruct LAA2 as [DF2 [LA2 VAR2]].
-      split.
-
-      admit. 
-
-      intros; split; intros. admit.
-      unfold sat_assignment in H.
-      clear LEN2 LA2 DF2 LEN1 nr nl. 
-
-      apply SW in H; clear SW.
-      inversion_clear H; inversion_clear H0.
-
-
-      apply mem_app_equiv; left. 
-
-      clear αs2.
-
-
-      apply mem_map_iff.
-
-      exists α; split. admit.
-
-     
-
-
-      apply LA1 in H1.
-      (* Idea: αs1 cannot contain x. We consider only sets over some fixed set of variables. *) 
-      (* Then I can show that αs1 doesn't containt x. *)
-
-      
-      inversion_clear H.
-
-      unfold mem_assign in H1.
-      clear DF1  LA1; induction αs1.
-      eauto. 
-      destruct H1.
-      left.
-      intros v EL.
-      apply H.
-
-      
-      { unfold dupfree_list_of_assignments.
-        exfalso; apply TODO.
-      }
-      { intros; split; intros.
-        { apply SW; clear SW.
-          destruct (mem_app _ _ _ _ H) as [IN1|IN2]; clear H.
-          { apply ev_disj_tl, ev_conj_t.
-            { apply mem_map_iff in IN1.
-              destruct IN1 as [mα [EQ1 MEM1]].
-              exfalso; apply TODO.
-            } 
-            { apply LA1; unfold mem_assign.
-                exfalso; apply TODO.
-            }
-          }
-          { apply ev_disj_tr, ev_conj_t.
-            { apply mem_map_iff in IN2.
-              destruct IN2 as [mα [EQ2 MEM2]].
-              exfalso; apply TODO.
-            }
-            { apply LA2; unfold mem_assign.
-              exfalso; apply TODO.
-            }
-          } 
+    repeat split.
+    { exfalso; apply TODO. }
+    { intros; apply SW; clear SW.
+      destruct (in_app_or _ _ _ H) as [EL|EL]; clear H.
+      { apply ev_disj_tl, ev_conj_t.
+        { apply in_map_iff in EL.
+          destruct EL as [mα [EQ1 MEM1]]; subst α.
+          constructor; constructor.
+        } 
+        { apply in_map_iff in EL.
+          destruct EL as [mα [EQ MEM]]; subst α.
+          apply todo13.
+          apply todo12.
+          apply LAA1; assumption.
         }
-        { 
-          apply SW in H. (* clear SW *)
-          inversion_clear H; inversion_clear H0.
-          {
-            inversion_clear H.
-            apply LA1 in H1.
-            apply mem_app_equiv; left. 
-            clear LEN2 LA2 DF2 αs2.
-            apply mem_map_iff.
-            exists α; split. 
-            { intros v EL.
-              decide (v = x).
-              { subst v. exists true; split. constructor. assumption. }
-              {  exfalso; apply TODO. }
-            }
-            { unfold mem_assign in H1.
-              clear DF1 LEN1 LA1; induction αs1.
-              eauto. 
-              destruct H1.
-              left.
-              intros v EL.
-              apply H.
+      }
+      { apply ev_disj_tr, ev_conj_t.
+        { apply in_map_iff in EL.
+          destruct EL as [mα [EQ MEM]]; subst α.
+          constructor; constructor; constructor.
+        }
+        { apply in_map_iff in EL.
+          destruct EL as [mα [EQ MEM]]; subst α.
+          apply todo13. apply todo14.
+          apply LAA2; assumption.
+        }
+      }
+    }      
+    { intros; apply SW in H; clear SW.
+      inversion_clear H; inversion_clear H0.
+      { 
+        
 
+        (* assert(HHH: x nel leaves (ϕ [x ↦ T])). admit. *)
 
-              decide (x = v). subst.
-              { admit. }
-              { admit. }
+        apply LAA1 in H1.
+        destruct LAA1 as [_ [_ [_ Hd]]].
+
+        
+        inversion_clear H.
+
+        apply mem_app_equiv; left. 
+        
+
+           
+        clear LEN2 LAA2 αs2.
+        apply mem_map_iff.
+
+        exists α; split. 
+        { intros v EL.
+          decide (v = x).
+          { subst v. exists true; split. constructor. assumption. }
+          { exfalso; apply TODO. }
+        }
+        { assert (HH : forall α : assignment, α el αs1 -> x nel (vars_in α)).
+          admit.
+          clear Hd. 
+          
+          unfold mem_a in *.
+          clear LEN1; induction αs1.
+          { eauto. } 
+          { destruct H1.
+            unfold equiv_assignments in H.
+            { clear IHαs1. 
               
 
-
-              right.
-
-              eauto 2.
-           
             }
+            { right.
+              apply IHαs1; eauto 2.
+              intros. apply HH. right. assumption.
+            } 
+
+
+          assert (DEC: {α = a} + {a el αs1}). admit. 
+          destruct DEC as [EQ|EL].
+          subst a.
+          
+          
+          specialize (HH a).
+          feed HH. left;reflexivity.
+          
+          left.
+          
+          
+          intros v EL.
+          apply H.
+          
+          
+          decide (x = v). subst.
+          { admit. }
+          { admit. }
+          
+          
+          
+          right.
+          
+          eauto 2.
+          
+        }
+            
+      admit. }
+    { admit. }
+    { admit. }
+    (*
+      
+    {
+
+
+      {
+        { 
+        
+          {
+            
+           
+       
           }
           { 
             
@@ -1085,11 +1080,12 @@ Proof.
           }
         }
       } *)
+    
 
-      admit.
-    }
+
     { rewrite app_length, map_length, map_length.
-      rewrite <- LEN1, <- LEN2; reflexivity. } 
+      rewrite <- LEN1, <- LEN2; reflexivity.
+    } 
   } 
 Admitted.
 
