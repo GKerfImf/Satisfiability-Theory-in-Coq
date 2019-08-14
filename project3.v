@@ -201,16 +201,6 @@ Definition var_ge (a b: variable) :=
 (* *)
 Definition variables := list variable.
 
-(* TODO: comment *)
-(* A variable by itself is not a very interesting object. 
-   Most of the time I'm going to use sets of variables. 
-   And for these sets I introduce the following structure. *)
-(* Inductive proper_variables: variables -> Prop :=
-| nil_var: proper_variables []
-| sin_var: forall (v: variable), proper_variables [v] 
-| con_var: forall (h: variable) (tl: variables) (v: variable),
-    lt h v -> proper_variables (h::tl) -> proper_variables (v::h::tl). *)
-
 
 (* TODO: comment *)
 (* Basically, here we have a choice (?) 
