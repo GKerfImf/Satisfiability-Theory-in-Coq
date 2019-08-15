@@ -2,7 +2,7 @@ Require Export List Omega.
 Import ListNotations.
 
 
-Lemma TODO:
+Lemma TODO0:
   False.
 Proof. Admitted.
 
@@ -29,6 +29,18 @@ Proof. Admitted.
 Lemma TODO6:
   False.
 Proof. Admitted.
+
+(*** Qed ~> Defined *)
+
+Lemma app_length: forall {A: Type} (l l': list A), length (l++l') = length l + length l'.
+Proof.
+  induction l; simpl; auto.
+Defined.
+
+Lemma plus_is_O n m : n + m = 0 -> n = 0 /\ m = 0.
+Proof.
+  destruct n; now split.
+Defined.
 
 (*** Util. *)
 
@@ -531,7 +543,20 @@ Defined.
 Definition equivalent (ϕ1 ϕ2: formula) :=
   forall (α: assignment) (b: bool), ℇ (ϕ1) α ≡ b <-> ℇ (ϕ2) α ≡ b.
 
-Lemma formula_equivalence_is_transitive:
+Lemma formula_equivalence_refl: 
+  forall (ϕ: formula),
+    equivalent ϕ ϕ.
+Proof.
+Admitted.
+
+Lemma formula_equivalence_sym: 
+  forall (ϕ ψ: formula),
+    equivalent ϕ ψ ->
+    equivalent ψ ϕ.
+Proof.
+Admitted.
+
+Lemma formula_equivalence_trans:
   forall (ϕ1 ϕ2 ϕ3: formula),
     equivalent ϕ1 ϕ2 ->
     equivalent ϕ2 ϕ3 ->
@@ -539,6 +564,112 @@ Lemma formula_equivalence_is_transitive:
 Proof.
 Admitted.
 
+Lemma formula_equivalence_neg: 
+  forall (ϕ ψ: formula),
+    equivalent ϕ (¬ ψ) ->
+    equivalent (¬ ϕ) ψ.
+Proof.
+Admitted.
+
+Lemma formula_equivalence_T_neg_F: 
+  equivalent T (¬ F).
+Proof.
+  intros α b; split; intros.
+  - inversion_clear H; constructor; constructor.
+  - inversion_clear H.
+    destruct b; simpl in *.
+    constructor.
+    inversion_clear H0.
+Qed.
+
+Lemma fo_eq_1:
+  forall (ϕ1 ϕ2 ψ1 ψ2: formula),
+    equivalent ϕ1 ψ1 ->
+    equivalent ϕ2 ψ2 ->
+    equivalent (ϕ1 ∧ ϕ2) (ψ1 ∧ ψ2).
+Proof.
+Admitted.
+
+Corollary fo_eq_2:
+  forall (ϕ1 ϕ2: formula),
+    equivalent ϕ1 T ->
+    equivalent ϕ2 T ->
+    equivalent (ϕ1 ∧ ϕ2) T.
+Proof.
+  intros.
+  apply formula_equivalence_trans with (T ∧ T).
+  apply fo_eq_1; auto.
+  admit.
+Admitted.
+
+(* TODO: More general form? *)
+Corollary fo_eq_3:
+  forall (ϕ1 ϕ2: formula),
+    equivalent ϕ1 F ->
+    equivalent (ϕ1 ∧ ϕ2) F.
+Proof.
+  intros.
+  admit.
+Admitted.
+
+(* TODO: More general form? *)
+Corollary formula_equi_1:
+  forall (ϕ1 ϕ2 ψ: formula),
+    equivalent (ϕ1 ∧ ϕ2) ψ ->
+    equivalent (ϕ2 ∧ ϕ1) ψ.
+Proof.
+  intros.
+  admit.
+Admitted.
+
+(* TODO: More general form? *)
+Corollary formula_equi_3:
+  forall (ϕ1 ϕ2 ψ: formula),
+    equivalent (ϕ1 ∨ ϕ2) ψ ->
+    equivalent (ϕ2 ∨ ϕ1) ψ.
+Proof.
+  intros.
+  admit.
+Admitted.
+
+
+(* TODO: More general form? *)
+Lemma formula_equi_2:
+  forall (ϕ1 ϕ2: formula),
+    equivalent ϕ1 T -> 
+    equivalent (ϕ1 ∨ ϕ2) T.
+Proof.
+  intros ? ? EQ ? ?; split; intros EV.
+  { destruct b.
+    - constructor.
+    - inversion_clear EV.
+      apply EQ in H; inversion_clear H.
+  }
+  { destruct b.
+    - apply ev_disj_tl.
+      apply EQ; assumption.
+    - inversion_clear EV.
+  }
+Defined.
+
+
+Lemma fo_eq_11:
+  forall (ϕ1 ϕ2 ψ1 ψ2: formula),
+    equivalent ϕ1 ψ1 ->
+    equivalent ϕ2 ψ2 ->
+    equivalent (ϕ1 ∨ ϕ2) (ψ1 ∨ ψ2).
+Proof.
+Admitted.
+
+Corollary fo_eq_21:
+  forall (ϕ1 ϕ2: formula),
+    equivalent ϕ1 F ->
+    equivalent ϕ2 F ->
+    equivalent (ϕ1 ∨ ϕ2) F.
+Proof.
+  intros.
+  admit.
+Admitted.
 
 
 (*** Alg 1: *)
@@ -637,31 +768,84 @@ Proof.
     assumption. }
   { apply None. }
 Defined.
+
+ Lemma dec121:
+  forall (ϕ: formula) (α:assignment), dec (sets_all_variables ϕ α).
+Proof.
+  intros; unfold sets_all_variables.
+  induction (leaves ϕ) as [ | v vs].
+  { left; intros v IN; exfalso; auto. }
+  { decide (v el vars_in α) as [INv|NINv].
+    - destruct IHvs as [IH|IH].
+      + left; intros x INx.
+        admit.
+      + admit.
+    - admit.
+  } 
+Admitted.
+
   
 (* TODO: comment *)
 Compute ((sat_kek_kek ([|V 0|] ∧ T) [(V 0, false)])).
 
-(* *)
-Definition algorithm1 (vs: variables) (ϕ: formula): nat :=
+Print dec.
+
+Definition algorithm1' (vs: variables) (ϕ: formula): nat :=
   length (
-      filter (fun α => match sat_kek_kek ϕ α with
-                    | None => false
-                    | Some (exist _ a _) => a
-                    end)
+      map (fun α => match (dec121 ϕ α) with
+                    | left _ => true
+                    | right _ => false
+                    end) 
              (all_assignments_on vs)).
 
 
-Definition algorithm1' (vs: variables) (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
-  exists (algorithm1 vs ϕ).
-  exists (filter (fun α => match sat_kek_kek ϕ α with
-                    | None => false
-                    | Some (exist _ a _) => a
-                    end)
-            (all_assignments_on vs)).
-  admit. 
-Admitted.
+Definition dependent_filter {X: Type} (p: X -> Prop) (xs: list X):
+  (forall x, dec (p x)) -> 
+  list {x | (* x el xs /\*) p x}.
+Proof.
+  intros DEC. 
+  induction xs.
+  - apply nil.
+  - destruct (DEC a) as [D|D].
+    + apply cons.
+      exists a; assumption. 
+      apply IHxs.
+    + apply IHxs.
+Defined. 
 
 
+
+
+    
+Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
+Proof.
+  
+  set (l := leaves ϕ).
+  set (αs := all_assignments_on l).
+
+  
+  
+  set (dep_αs := dependent_filter (fun α => sets_all_variables ϕ α) αs (dec121 ϕ)).
+  set (dep_sat_αs := filter (fun (α: {α: assignment | sets_all_variables ϕ α} ) => proj1_sig (sat_kek ϕ (proj1_sig α) (proj2_sig α))) dep_αs).
+  set (sat_αs := map (fun (α: {α : assignment | sets_all_variables ϕ α}) => proj1_sig α) dep_sat_αs).
+  
+  exists  (length sat_αs).
+
+  unfold number_of_sat_assignments.
+  exists sat_αs; split; [ | reflexivity].
+
+  repeat split.
+  - exfalso; apply TODO0.
+  - intros.
+    exfalso; apply TODO0.
+  - exfalso; apply TODO0.
+  - exfalso; apply TODO0.
+  - exfalso; apply TODO0.
+Defined.
+
+
+
+(* Compute (proj1_sig (algorithm1 ([|V 0|] ∧ [|V 1|] ∧ [|V 2|]))). *)
 
   
 
@@ -681,7 +865,8 @@ Admitted.
 Lemma todo11:
   forall (ϕl ϕr: formula), formula_size (ϕl ∨ ϕr) = formula_size ϕl + formula_size ϕr.
 Proof.
-Admitted.
+  intros; unfold formula_size; simpl; rewrite app_length; reflexivity.
+Defined.
 
 
 Lemma todo3:
@@ -720,7 +905,7 @@ Proof.
 
 Admitted.
 
-Lemma kek1:
+(* Lemma kek1:
   forall (ϕ: formula) (α: assignment) (b: bool),
   forall (x: variable),
     x / α ↦ true -> 
@@ -755,9 +940,9 @@ Proof.
     - constructor; apply IHϕ1; assumption. 
     - apply ev_disj_tr; apply IHϕ2; assumption. } 
   { admit. }
-Admitted.
+Admitted. *)
 
-Lemma kek2 (ϕ: formula) (α: assignment) (b: bool):
+(* Lemma kek2 (ϕ: formula) (α: assignment) (b: bool):
   forall (x: variable),
     x / α ↦ false -> 
     formula_eval ϕ α b <-> formula_eval (ϕ[x ↦ F]) α b.
@@ -776,7 +961,7 @@ Proof.
     - simpl.
       constructor.
       admit (* ??? *).
-Admitted.
+Admitted. *)
 
 
 Lemma substitute_equiv':
@@ -878,17 +1063,40 @@ Proof.
   { right; intros ? ?; split; intros EV; assumption. }
   { left; intros ? ?; split; intros EV; assumption. }
   { exfalso; compute in SIZE; easy. }
-  { rewrite todo9 in SIZE.
+  { rewrite todo9 in SIZE. 
     feed IHϕ; auto.
-    destruct IHϕ as [IH|IH].
-    - right; intros ? ?; split; intros EV.
-      exfalso; apply TODO.
-      exfalso; apply TODO.
-    - exfalso; apply TODO. 
+    destruct IHϕ as [IH|IH]; [right | left].
+    { apply formula_equivalence_neg.
+      apply formula_equivalence_trans with T; auto.
+      apply formula_equivalence_T_neg_F. }
+    { apply formula_equivalence_neg.
+      apply formula_equivalence_trans with F; auto.
+      apply formula_equivalence_sym, formula_equivalence_neg, formula_equivalence_T_neg_F. } }
+  { rewrite todo10 in SIZE.
+    apply plus_is_O in SIZE.
+    destruct SIZE as [S1 S2].
+    feed IHϕ1; auto; feed IHϕ2; auto.
+    destruct IHϕ1 as [IH1|IH1].
+    - destruct IHϕ2 as [IH2|IH2].
+      + left; apply fo_eq_2; auto.
+      + right; clear IH1.
+        apply formula_equi_1, fo_eq_3; auto.
+    - right; clear IHϕ2.
+      apply fo_eq_3; auto.
   }
-  { exfalso; apply TODO. }
-  { exfalso; apply TODO. }
-Defined.  
+  { rewrite todo11 in SIZE.
+    apply plus_is_O in SIZE.
+    destruct SIZE as [S1 S2].
+    feed IHϕ1; auto; feed IHϕ2; auto.
+    destruct IHϕ1 as [IH1|IH1].
+    - clear IHϕ2; left. 
+      apply formula_equi_2; auto.
+    - destruct IHϕ2 as [IH2|IH2].
+      + left; apply formula_equi_3, formula_equi_2; auto. 
+      + right.
+        apply fo_eq_21; auto; apply fo_eq_11.
+  }
+Defined.
 
 Lemma count3:
   number_of_sat_assignments T 1.
@@ -902,11 +1110,11 @@ Proof.
     intros α1 EL; easy.
   - intros. inversion_clear H.
     simpl in H0.
-    exfalso; apply TODO. 
+    admit.
     inversion_clear H0.
   - apply singl_in in H; subst.
     simpl; intros v EL; assumption.
-Qed.
+Admitted.
 
 Lemma count5:
   forall (ϕ: formula),
@@ -1057,10 +1265,8 @@ Proof.
 Defined.
 
 
-Compute (proj1_sig (algorithm2 (F ∨ T))).
+Compute (proj1_sig (algorithm2 ([|V 0|] ⊕[|V 1|] ⊕ [|V 2|] ⊕ [|V 3|] ⊕ [|V 4|]))).
 
-
-  
 
 (*** Alg 3: *)
 (** With certificates and DNF *)
@@ -1163,7 +1369,7 @@ Proof.
 
   destruct (formula_size_dec ϕ) as [Z|POS].
   destruct (zero_size_formula_constant_dec _ Z) as [Tr|Fl].
-  { exists [[Atom true]].
+  { exists [[Atom true]]. 
     assert(EQ:= dnf_representation_of_T_exists). 
     intros; split; intros.
     - apply EQ, Tr; assumption.
@@ -1229,12 +1435,8 @@ Proof.
         apply in_or_app. left.
         apply in_map_iff. exists mon. split. reflexivity.
         assumption.
-        
         constructor.
-        
-
         intros.
-
         inversion_clear EV.
         destruct H0. subst. constructor. assumption.
         apply H1. assumption.
@@ -1248,7 +1450,6 @@ Proof.
       - destruct H as [mon [EL EV]].
         admit. 
       - admit. 
-      
     }
 Admitted.      
 
@@ -1256,9 +1457,15 @@ Admitted.
 (* Definition certificate0 (ϕ: formula) (ξ: assignment): Prop := *)
 
 Definition certificate1 (ϕ: formula) (ξ: assignment): Prop :=
-  forall α, equiv_assignments nil α ξ -> ℇ (ϕ) α ≡ true. 
+  forall α, equiv_assignments (vars_in ξ) α ξ -> ℇ (ϕ) α ≡ true. 
 
-Definition monomial_to_certificate (m: monomial): assignment := nil.
+Fixpoint monomial_to_certificate (m: monomial): assignment :=
+  match m with
+  | [] => []
+  | Atom _ :: m' => monomial_to_certificate m'
+  | Positive v :: m' => (v,true) :: monomial_to_certificate m'
+  | Negative v :: m' => (v, false) :: monomial_to_certificate m'
+  end.
 
 Lemma theorem:
   forall (ϕ: formula) (ψ: dnf),
@@ -1267,9 +1474,31 @@ Lemma theorem:
       m el ψ ->
       certificate1 ϕ (monomial_to_certificate m).
 Proof.
-  intros ? ? DNF mon IN ? EQU.
-  
-  
+  intros ? ? DNF mon INm ? EQU.
+  apply DNF.
+  constructor; exists mon; split; auto.
+  constructor; intros l INl.
+  induction mon. admit.
+
+  feed IHmon. admit.
+
+  inversion_clear INl; [subst a| ].
+  { 
+    destruct l; simpl in *.
+    - destruct b. constructor. admit. 
+    - constructor. (* *) admit. 
+    - admit. 
+  } 
+  { apply IHmon; [ | assumption].
+    intros v EL.
+    destruct a; simpl in *. apply EQU; eauto .
+    specialize (EQU v).
+    
+    apply EQU.
+    simpl in EQU.
+      
+  simpl in *.
+  constructor.
 
 Admitted.
 
