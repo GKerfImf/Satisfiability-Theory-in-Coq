@@ -1272,12 +1272,12 @@ Compute (proj1_sig (algorithm2 ([|V 0|] ⊕[|V 1|] ⊕ [|V 2|] ⊕ [|V 3|] ⊕ [
 (** With certificates and DNF *)
 
 Inductive literal :=
-| Atom: bool -> literal
+(* | Atom: bool -> literal *)
 | Positive: variable -> literal
 | Negative: variable -> literal.
 
 Inductive literal_eval: literal -> assignment -> bool -> Prop :=
-| lit_ev_atom: forall (α: assignment) (b: bool), literal_eval (Atom b) α b
+(* | lit_ev_atom: forall (α: assignment) (b: bool), literal_eval (Atom b) α b *)
 | lit_ev_pos: forall (v: variable) (α: assignment) (b: bool),
     (v/α ↦ b) -> literal_eval (Positive v) α b
 | lit_ev_neg: forall (v: variable) (α: assignment) (b: bool),
@@ -1303,62 +1303,215 @@ Inductive dnf_eval: dnf -> assignment -> bool -> Prop :=
     (forall (m: monomial), m el d -> monomial_eval m α false) -> 
     dnf_eval d α false.
 
+
+(* TODO: comment *)
+Definition product {X: Type} (xs ys: list (list X)):list(list X) :=
+  flat_map (fun (y:list X) =>
+         map (fun (x: list X) => x ++ y) xs) ys.
+
+Compute (product ([ [1;2];[4] ]) ([[3;5];[6;7]]) ).
+
+
+Fixpoint neg_size (ϕ: formula): nat :=
+  match ϕ with
+  | ¬ ϕ => 1 + neg_size ϕ
+  | ϕl ∨ ϕr => neg_size ϕl + neg_size ϕr + 1
+  | ϕl ∧ ϕr => neg_size ϕl + neg_size ϕr + 1
+  | _ => 1
+  end.
+
+Inductive subformula: formula -> formula -> Prop :=
+| subf_id: forall ϕ, subformula ϕ ϕ
+| subf_neg: forall ϕ ψ, subformula ϕ ψ -> subformula ϕ (¬ ψ)
+                                               
+| subf_conj_l: forall ϕ ψl ψr, subformula ϕ ψl -> subformula ϕ (ψl ∧ ψr)
+| subf_conj_r: forall ϕ ψl ψr, subformula ϕ ψr -> subformula ϕ (ψl ∧ ψr)
+                                                       
+| subf_disj_l: forall ϕ ψl ψr, subformula ϕ ψl -> subformula ϕ (ψl ∨ ψr)
+| subf_disj_r: forall ϕ ψl ψr, subformula ϕ ψr -> subformula ϕ (ψl ∨ ψr)
+.
+
+
+Definition negs (ϕ: formula):
+  {neg_ϕ : formula | equivalent ϕ neg_ϕ /\ forall lit, subformula (¬ lit) neg_ϕ -> exists v, [|v|] = lit}.
+Proof.
+ generalize dependent ϕ. 
+ apply size_recursion with neg_size; intros ϕ IH.
+ destruct ϕ.
+ { exists F; split.
+   - apply formula_equivalence_refl.
+   - intros; inversion_clear H.
+ }
+ { exists T; split.
+   - apply formula_equivalence_refl.
+   - intros; inversion_clear H.
+ }
+ { exists [|v|]; split.
+   - apply formula_equivalence_refl.
+   - intros; inversion_clear H.
+ }
+ { destruct ϕ.
+   { exists T; split. 
+     - apply formula_equivalence_sym;
+         apply formula_equivalence_T_neg_F.
+     - intros; inversion_clear H.       
+   }
+   { exists F; split.
+     - apply formula_equivalence_neg;
+         apply formula_equivalence_T_neg_F.
+     - intros; inversion_clear H.  
+   }
+   { exists (¬ [|v|]); split.
+     - apply formula_equivalence_refl.
+     - intros; inversion_clear H.
+       + exists v; reflexivity.
+       + inversion_clear H0.
+   }
+   { assert (IH1 := IH ϕ); feed IH1; [simpl; omega| clear IH].
+     destruct IH1 as [neg_ϕ [EQ LIT]].
+     exists neg_ϕ; split.
+     - apply formula_equivalence_neg. 
+       exfalso; apply TODO0. 
+     - eauto.
+   }
+   { assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
+     assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| clear IH].
+     destruct IH1 as [neg_ϕ1 EQ1], IH2 as [neg_ϕ2 EQ2].
+     exists (neg_ϕ1 ∨ neg_ϕ2); split.
+     - exfalso; apply TODO0.
+     - exfalso; apply TODO0. 
+     
+   }
+   { assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
+     assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| ].
+     destruct IH1 as [neg_ϕ1 EQ1], IH2 as [neg_ϕ2 EQ2].
+     exists (neg_ϕ1 ∧ neg_ϕ2); split.
+     - exfalso; apply TODO0.
+     - exfalso; apply TODO0. 
+   }   
+ }
+ { assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
+   assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
+   destruct IH1 as [neg_ϕ1 EQ1], IH2 as [neg_ϕ2 EQ2].
+   exists (neg_ϕ1 ∧ neg_ϕ2); split.
+   - exfalso; apply TODO0.
+   - exfalso; apply TODO0. 
+ }
+ { assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
+   assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
+   destruct IH1 as [neg_ϕ1 EQ1], IH2 as [neg_ϕ2 EQ2].
+   exists (neg_ϕ1 ∨ neg_ϕ2); split.
+   - exfalso; apply TODO0.
+   - exfalso; apply TODO0. 
+ }
+Defined.
+
+Let x0 := [|V 0|].
+Let x1 := [|V 1|].
+Let x2 := [|V 2|].
+Let x3 := [|V 3|].
+Compute (negs (¬ (x0 ∨ x1) ∧ (x2 ∨ x3))).
+ 
+  
 (* TODO: comment *)
 Definition dnf_representation (ϕ: formula) (ψ: dnf) :=
  forall (α: assignment) (b: bool),
       (formula_eval ϕ α b) <-> (dnf_eval ψ α b).
 
-(* TODO: comment *)
+ (* TODO: comment *)
 (* As you can see, *)
-Lemma dnf_representation_of_T_exists:
-  dnf_representation T [[Atom true]].   
+Lemma dnf_representation_of_T:
+  dnf_representation T [[]].   
 Proof.
   split; intros EV.
   { inversion_clear EV.
     constructor; intros.
-    exists [Atom true]; split.
+    exists []; split.
     - left; reflexivity.
     - constructor.
-      intros; apply singl_in in H; subst.
-      constructor. 
+      intros; inversion_clear H.
   }
   { inversion_clear EV.
     - constructor.
     - exfalso.
-      assert ([Atom true] el [[Atom true]]); [left; reflexivity| ]. 
-      specialize (H _ H0); clear H0.
+      specialize (H ([])); feed H; [left; auto | ].
       inversion_clear H. 
       destruct H0 as [t  [IN EV]].
-      apply singl_in in IN; subst.
-      inversion_clear EV.
-    } 
+      inversion_clear IN.
+  } 
 Qed.
 
-(* TODO: fix ψ ~> [[Atom false]]*)
-Lemma dnf_representation_of_F_exists:
-  exists (ψ: dnf), dnf_representation F ψ.   
+
+Lemma dnf_representation_of_F:
+  dnf_representation F [].   
 Proof.
-  exists [[Atom false]]; intros.
   split; intros EV.
   { inversion_clear EV.
     constructor; intros.
-    apply singl_in in H; subst.
-    constructor.
-    exists (Atom false); split.
-    - left; reflexivity.
-    - constructor. 
+    inversion_clear H.
   }
   { inversion_clear EV.
-    - exfalso.
-      destruct H as [m [IN EV]].
-      apply singl_in in IN; subst.
-      inversion_clear EV.
-      assert ((Atom false) el [Atom false]); [left; reflexivity| ].
-      specialize (H _ H0); clear H0.
-      inversion_clear H.
-    - constructor.      
+    - destruct H as [m [IN EV]]; inversion_clear IN.
+    - constructor.
   } 
 Qed.
+
+Lemma dnf_representation_of_var:
+  forall v, dnf_representation [|v|] [[Positive v]].   
+Proof.
+  intros; split; intros EV.
+  { inversion_clear EV.
+    destruct b; constructor.
+    admit. admit.
+  }
+  { inversion_clear EV.
+    destruct H as [m [IN EV]].
+    apply singl_in in IN; subst m.
+    inversion_clear EV.
+    admit.
+    admit. 
+  } 
+Admitted.
+
+Fixpoint to_dnf_h (ϕ: formula): dnf :=
+  match ϕ with
+  | T => [[]]
+  | F => []
+  | [|v|] => [[Positive v]]
+              
+  | ¬ [|v|] => [[Negative v]]
+  | ¬ ϕ => to_dnf_h ϕ
+            
+  | ϕ1 ∧ ϕ2 => product (to_dnf_h ϕ1) (to_dnf_h ϕ2)
+                 
+  | ϕ1 ∨ ϕ2 => to_dnf_h ϕ1 ++ to_dnf_h ϕ2
+
+ 
+  end.
+
+Definition to_dnf (ϕ: formula): {ψ: dnf | dnf_representation ϕ ψ}.
+Proof.
+  assert (NEG := negs ϕ).
+  destruct NEG as [neg_ϕ [EQ NEG]].
+  
+  exists (to_dnf_h neg_ϕ).
+  assert (P : dnf_representation neg_ϕ (to_dnf_h neg_ϕ)).
+  { clear EQ ϕ.
+    induction neg_ϕ.
+    - apply dnf_representation_of_F. 
+    - apply dnf_representation_of_T. 
+    - apply dnf_representation_of_var.
+    - destruct neg_ϕ; simpl in *. admit. admit. admit. admit. admit. admit.
+    - admit.
+    - admit.
+  }
+Admitted.
+
+    
+Compute (to_dnf (¬ (x0 ∨ x1) ∧ (x2 ∨ x3))).
+
+
+
 
   
 Theorem dnf_representation_exists:
