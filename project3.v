@@ -409,6 +409,16 @@ Definition impl (ϕl ϕr: formula) := ¬ϕl ∧ ϕr.
 Notation "x '⇒' y" := (impl x y) (at level 41, left associativity).
 
 
+Let x0 := [|V 0|].
+Let x1 := [|V 1|].
+Let x2 := [|V 2|].
+Let x3 := [|V 3|].
+Let x4 := [|V 4|].
+Let x5 := [|V 5|].
+Let x6 := [|V 6|].
+Let x7 := [|V 7|].
+
+
 (* TODO: def *)
 (* TODO: comment *)
 Reserved Notation "'ℇ' '(' ϕ ')' α ≡ b" (at level 10).
@@ -538,6 +548,10 @@ Proof.
   { simpl in NE; omega. }
   { exists v; left; reflexivity. }
 Defined.
+
+(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
+  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
+*)
 
 
 Definition equivalent (ϕ1 ϕ2: formula) :=
@@ -714,16 +728,10 @@ Definition list_of_all_assignments (vs: variables) (αs: assignments) :=
 
 Fixpoint all_assignments_on (vs: variables): assignments :=
   match vs with
-  |  [] => [[]]
+  | [] => [[]]
   | v::vs => map (fun α => (v,false)::α) (all_assignments_on vs)
               ++ map (fun α => (v,true)::α) (all_assignments_on vs)
   end.
-
-Definition all_assignments_on' (vs: variables):
-  {αs: assignments | list_of_all_assignments vs αs}.
-Proof.
-
-Admitted.
   
 (* TODO: name *)
 Lemma correctness_all_assignments:
@@ -770,7 +778,7 @@ Definition sat_kek (ϕ: formula) (α: assignment) (SET: sets_all_variables ϕ α
     destruct b1, b2; simpl in *; try(constructor; auto; fail).
 Defined.
 
-(* Check *)
+(* (* Check *)
 (* Trivial, but important implication of the previous algorithm/evaluator. *)
 Lemma todo7:
   forall (ϕ: formula) (α: assignment),
@@ -785,7 +793,6 @@ Proof.
 Qed.
 
 (* TODO: del *)
-(* (* Trivial, but important implication of the previous algorithm/evaluator. *)
 Lemma todo8:
   forall (ϕ: formula) (α: assignment),
     {ℇ (ϕ) α ≡ true} + {ℇ (ϕ) α ≡ false}.
@@ -793,16 +800,7 @@ Proof.
 Admitted. *)
 
 
-Definition sat_kek_kek (ϕ: formula) (α: assignment): option {b: bool | formula_eval ϕ α b}.
-Proof.
-  decide (incl (leaves ϕ) (vars_in α)) as [IN | NIN].
-  { apply Some.
-    apply sat_kek.
-    assumption. }
-  { apply None. }
-Defined.
-
- Lemma dec121:
+Lemma dec121:
   forall (ϕ: formula) (α:assignment), dec (sets_all_variables ϕ α).
 Proof.
   intros; unfold sets_all_variables.
@@ -817,141 +815,36 @@ Proof.
   } 
 Admitted.
 
-  
-(* TODO: comment *)
-Compute ((sat_kek_kek ([|V 0|] ∧ T) [(V 0, false)])).
 
-Print dec.
+Definition sat_filter (ϕ: formula) (α: assignment): bool :=
+  match dec121 ϕ α with 
+  | left _ SETS => let '(exist _ b _) :=  sat_kek ϕ α SETS in b
+  | right _ => false
+  end.
 
-Definition algorithm1' (vs: variables) (ϕ: formula): nat :=
-  length (
-      map (fun α => match (dec121 ϕ α) with
-                    | left _ => true
-                    | right _ => false
-                    end) 
-             (all_assignments_on vs)).
-
-
-Definition dependent_filter {X: Type} (p: X -> Prop) (xs: list X):
-  (forall x, dec (p x)) -> 
-  list {x | (* x el xs /\*) p x}.
-Proof.
-  intros DEC. 
-  induction xs.
-  - apply nil.
-  - destruct (DEC a) as [D|D].
-    + apply cons.
-      exists a; assumption. 
-      apply IHxs.
-    + apply IHxs.
-Defined. 
+    
 
 
 
-Instance vars_dec: eq_dec variable. 
-Proof.
-Admitted.
-
-About nodup .
-
-(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
-  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
-*)
   
 Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
-
-  assert(EX: { αs | list_of_sat_assignments (leaves ϕ) ϕ αs }).
+  assert(EX: { αs | list_of_sat_assignments (nodup eq_var_dec (leaves ϕ)) ϕ αs }).
   { unfold list_of_sat_assignments.
-    
-    
-
-  admit.
-
+    exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (leaves ϕ))).
+    repeat split; intros.
+    - exfalso; apply TODO0.
+    - exfalso; apply TODO0.
+    - exfalso; apply TODO0.
+    - exfalso; apply TODO0.
+    - exfalso; apply TODO0.
+  }
   destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
-
-
-
-
-  
-  
-  
-  (*  destruct (all_assignments_on' (leaves ϕ)) as [αs ALL]. *)
-
-  generalize dependent ϕ.
-  (* generalize dependent αs. *)
-
-  apply size_recursion with (σ := @length assignment).
-  intros αs IH.
-
-  intros.
-
-
-  
-  intros . clear 
-  intros αs.
-
-  admit. 
-  
-  exists n
-    
-  
-  assert (H: { vars | vars_in_f ϕ vars}).
-  { admit. }
-
-  destruct H as [vars VAR].
-
-  
- 
-  
-  induction vars; intros.
-
-  admit.
-
-  
-  
-  induction (leaves ϕ) as [ | JH].
-  
-  
-  induction x.
-  exists 1. admit. 
-
-
-  
-  
-  
-
-  induction αs.
-  exists 1. admit. 
-
-  unfold list_of_all_assignments in ALL.
-  simpl in ALL.
-  
-  
-
-  
-  
-  set (dep_αs := dependent_filter (fun α => sets_all_variables ϕ α) αs (dec121 ϕ)).
-  set (dep_sat_αs := filter (fun (α: {α: assignment | sets_all_variables ϕ α} ) => proj1_sig (sat_kek ϕ (proj1_sig α) (proj2_sig α))) dep_αs).
-  set (sat_αs := map (fun (α: {α : assignment | sets_all_variables ϕ α}) => proj1_sig α) dep_sat_αs).
-  
-  exists  (length sat_αs).
-
-  unfold number_of_sat_assignments.
-  exists sat_αs; split; [ | reflexivity].
-
-  repeat split.
-  - exfalso; apply TODO0.
-  - intros.
-    exfalso; apply TODO0.
-  - exfalso; apply TODO0.
-  - exfalso; apply TODO0.
-  - exfalso; apply TODO0.
+  exfalso; apply TODO0.
 Defined.
 
 
-
-(* Compute (proj1_sig (algorithm1 ([|V 0|] ∧ [|V 1|] ∧ [|V 2|]))). *)
+Compute (proj1_sig (algorithm1 (x1 ∧ x2 ∨ x3))).
 
   
 
@@ -1410,14 +1303,7 @@ Inductive dnf_eval: dnf -> assignment -> bool -> Prop :=
     dnf_eval d α false.
 
 
-Let x0 := [|V 0|].
-Let x1 := [|V 1|].
-Let x2 := [|V 2|].
-Let x3 := [|V 3|].
-Let x4 := [|V 4|].
-Let x5 := [|V 5|].
-Let x6 := [|V 6|].
-Let x7 := [|V 7|].
+
 
 (* TODO: comment *)
 Definition flat_product {X: Type} (xs ys: list (list X)):list(list X) :=
