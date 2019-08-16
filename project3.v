@@ -778,27 +778,6 @@ Definition sat_kek (ϕ: formula) (α: assignment) (SET: sets_all_variables ϕ α
     destruct b1, b2; simpl in *; try(constructor; auto; fail).
 Defined.
 
-(* (* Check *)
-(* Trivial, but important implication of the previous algorithm/evaluator. *)
-Lemma todo7:
-  forall (ϕ: formula) (α: assignment),
-    sets_all_variables ϕ α -> 
-    {ℇ (ϕ) α ≡ true} + {ℇ (ϕ) α ≡ false}.
-Proof.
-  intros.
-  assert (EV:= sat_kek ϕ α H).
-  destruct EV as [b EV]; destruct b.
-  - left; assumption.
-  - right; assumption.
-Qed.
-
-(* TODO: del *)
-Lemma todo8:
-  forall (ϕ: formula) (α: assignment),
-    {ℇ (ϕ) α ≡ true} + {ℇ (ϕ) α ≡ false}.
-Proof.
-Admitted. *)
-
 
 Lemma dec121:
   forall (ϕ: formula) (α:assignment), dec (sets_all_variables ϕ α).
@@ -809,11 +788,15 @@ Proof.
   { decide (v el vars_in α) as [INv|NINv].
     - destruct IHvs as [IH|IH].
       + left; intros x INx.
-        admit.
-      + admit.
-    - admit.
+        destruct INx as [EQ|INx]; [subst; assumption | apply IH; assumption].
+      + right; intros C; apply IH; clear IH.
+        intros a INa.
+        apply C; right; assumption.
+    - right; intros C.
+      apply NINv.
+      specialize (C v); feed C; [left; reflexivity | ]; assumption.
   } 
-Admitted.
+Defined.
 
 
 Definition sat_filter (ϕ: formula) (α: assignment): bool :=
@@ -831,7 +814,7 @@ Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
   assert(EX: { αs | list_of_sat_assignments (nodup eq_var_dec (leaves ϕ)) ϕ αs }).
   { unfold list_of_sat_assignments.
-    exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (leaves ϕ))).
+    exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (nodup eq_var_dec (leaves ϕ)))).
     repeat split; intros.
     - exfalso; apply TODO0.
     - exfalso; apply TODO0.
@@ -844,7 +827,7 @@ Proof.
 Defined.
 
 
-Compute (proj1_sig (algorithm1 (x1 ∧ x2 ∨ x3))).
+Compute (proj1_sig (algorithm1 (x1 ∧ (x2 ⊕ x3) ⊕ x1 ∨ x2 ∨ x5))).
 
   
 
