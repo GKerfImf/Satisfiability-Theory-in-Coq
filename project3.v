@@ -703,6 +703,7 @@ Admitted.
 (** This algorithm is quite boring. *)
 
 
+(* TODO: change definition of dupfree??? *)
 Definition list_of_all_assignments (vs: variables) (αs: assignments) :=
   dupfree_a vs αs /\
   (forall α,
@@ -718,6 +719,12 @@ Fixpoint all_assignments_on (vs: variables): assignments :=
               ++ map (fun α => (v,true)::α) (all_assignments_on vs)
   end.
 
+Definition all_assignments_on' (vs: variables):
+  {αs: assignments | list_of_all_assignments vs αs}.
+Proof.
+
+Admitted.
+  
 (* TODO: name *)
 Lemma correctness_all_assignments:
   forall (vs: variables), list_of_all_assignments vs (all_assignments_on vs).
@@ -841,13 +848,86 @@ Defined.
 
 
 
+Instance vars_dec: eq_dec variable. 
+Proof.
+Admitted.
 
-    
+About nodup .
+
+(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
+  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
+*)
+  
 Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
+
+  assert(EX: { αs | list_of_sat_assignments (leaves ϕ) ϕ αs }).
+  { unfold list_of_sat_assignments.
+    
+    
+
+  admit.
+
+  destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
+
+
+
+
   
-  set (l := leaves ϕ).
-  set (αs := all_assignments_on l).
+  
+  
+  (*  destruct (all_assignments_on' (leaves ϕ)) as [αs ALL]. *)
+
+  generalize dependent ϕ.
+  (* generalize dependent αs. *)
+
+  apply size_recursion with (σ := @length assignment).
+  intros αs IH.
+
+  intros.
+
+
+  
+  intros . clear 
+  intros αs.
+
+  admit. 
+  
+  exists n
+    
+  
+  assert (H: { vars | vars_in_f ϕ vars}).
+  { admit. }
+
+  destruct H as [vars VAR].
+
+  
+ 
+  
+  induction vars; intros.
+
+  admit.
+
+  
+  
+  induction (leaves ϕ) as [ | JH].
+  
+  
+  induction x.
+  exists 1. admit. 
+
+
+  
+  
+  
+
+  induction αs.
+  exists 1. admit. 
+
+  unfold list_of_all_assignments in ALL.
+  simpl in ALL.
+  
+  
 
   
   
@@ -1623,10 +1703,11 @@ Proof.
     exists (ψ1 ++ ψ2); apply dnf_representation_of_or; auto.
   }
 Defined.
-    
-Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∨ (x0 ∨ x1)))).
 
-
+(* Next note that for some formulas [to_dnf] can return 
+   
+*)    
+Compute (proj1_sig (to_dnf ((x0 ∧ x1) ∨ (x0 ∧ x1)))).
 
 
 (* Definition certificate0 (ϕ: formula) (ξ: assignment): Prop := *)
@@ -1637,7 +1718,6 @@ Definition certificate1 (ϕ: formula) (ξ: assignment): Prop :=
 Fixpoint monomial_to_certificate (m: monomial): assignment :=
   match m with
   | [] => []
-  | Atom _ :: m' => monomial_to_certificate m'
   | Positive v :: m' => (v,true) :: monomial_to_certificate m'
   | Negative v :: m' => (v, false) :: monomial_to_certificate m'
   end.
