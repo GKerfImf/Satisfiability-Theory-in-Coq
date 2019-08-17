@@ -275,7 +275,7 @@ Admitted.
 
 Lemma mapsto_dec:
   forall (α: assignment) (v: variable),
-    v el (vars_in α) ->
+    v el vars_in α ->
     {v / α ↦ true} + {v / α ↦ false}. 
 Proof.
   induction α; intros v1 ?. 
@@ -1183,17 +1183,17 @@ Lemma count3:
 Proof. 
   intros.
   exists [[]]; repeat split.  
-  - intros C; inversion_clear C.
-  - intros.
-    constructor.
-  - intros; simpl; left.
-    intros α1 EL; easy.
-  - intros. inversion_clear H.
-    simpl in H0.
+  - constructor; [easy| constructor]. 
+  - intros ? ? EL1 EL2 NEQ.
+    exfalso; apply NEQ.
     admit.
-    inversion_clear H0.
-  - apply singl_in in H; subst.
-    simpl; intros v EL; assumption.
+  - intros ? EL.
+    admit.
+  - intros.
+    exists [].
+    simpl; split.
+    intros v EL. easy.
+    left; reflexivity.
 Admitted.
 
 Lemma count5:
@@ -1209,10 +1209,10 @@ Lemma count4:
 Proof.
   intros.
   exists []; repeat split; intros.
+  - constructor.
+  - easy.
+  - easy.
   - inversion_clear H.
-  - inversion_clear H.  
-  - inversion_clear H.
-  - exfalso; assumption.
 Qed. 
 
 Lemma count6:
@@ -1268,11 +1268,25 @@ Proof.
     destruct IH1 as [nl EQ1], IH2 as [nr EQ2].
     exists (nl + nr).
     destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
-    
     exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2). 
     repeat split.
-    {
-      exfalso; apply TODO1.
+    { destruct LAA1.
+      (* Ok *) exfalso; apply TODO1.
+    }
+    { intros ? ? EL1 EL2 EQ NEQ.
+      apply in_app_iff in EL1; apply in_app_iff in EL2.
+      destruct EL1 as [EL1|EL1]; destruct EL2 as [EL2|EL2]. 
+      - apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
+        apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]].
+        subst α1 α2; clear LEN1 LEN2.
+        destruct LAA1 as [[_ ND] _].
+        specialize (ND _ _ EL1 EL2).
+        feed ND. exfalso; apply TODO1.
+        apply ND.
+        exfalso; apply TODO1.
+      - exfalso; apply TODO2.
+      - exfalso; apply TODO3.
+      - exfalso; apply TODO4.
     }
     { intros; apply SW; clear SW.
       destruct (in_app_or _ _ _ H) as [EL|EL]; clear H.
@@ -1299,19 +1313,38 @@ Proof.
           apply LAA2; assumption.
         }
       }
-    }      
-    { intros; apply SW in H; clear SW.
-      inversion_clear H; inversion_clear H0.
-      { 
-        
-        apply LAA1 in H1.
-        inversion_clear H.
+    }
+    { intros ? SAT; apply SW in SAT; clear SW.
+      inversion_clear SAT; inversion_clear H.
+      { apply LAA1 in H1; destruct H1 as [β [EQ EL]].
+        inversion_clear H0. 
+        exists ((x,true)::β); split.
+        { exfalso; apply TODO3. }
+        apply in_app_iff; left.
+        apply in_map_iff; exists β; easy.
+      }
+      { apply LAA2 in H1; destruct H1 as [β [EQ EL]].
+        inversion_clear H0. 
+        exists ((x,false)::β); split.
+        { exfalso; apply TODO3. }
+        apply in_app_iff; right.
+        apply in_map_iff; exists β; easy.
+      }
+    } 
+    { rewrite app_length, map_length, map_length.
+      rewrite <- LEN1, <- LEN2; reflexivity.
+    } 
+  } 
+Defined.
 
-        apply mem_app_equiv; left. 
+
+  (* 
+      { 
+        Search _ (_ el _).
         
+        apply mem_app_equiv; left.         
         clear LEN2 LAA1 LAA2 αs2 LEN1.
         induction αs1; eauto 2.
-
         inversion_clear H1.
         left.
         intros v EL.
@@ -1336,14 +1369,7 @@ Proof.
       { exfalso; apply TODO3.
       }
     } 
-    { exfalso; apply TODO4. }
-    { exfalso; apply TODO5. }    
-    { rewrite app_length, map_length, map_length.
-      rewrite <- LEN1, <- LEN2; reflexivity.
-    } 
-  } 
-Defined.
-
+   *)
 
 Compute (proj1_sig (algorithm2 ([|V 0|] ⊕[|V 1|] ⊕ [|V 2|] ⊕ [|V 3|] ⊕ [|V 4|]))).
 
@@ -1352,12 +1378,10 @@ Compute (proj1_sig (algorithm2 ([|V 0|] ⊕[|V 1|] ⊕ [|V 2|] ⊕ [|V 3|] ⊕ [
 (** With certificates and DNF *)
 
 Inductive literal :=
-(* | Atom: bool -> literal *)
 | Positive: variable -> literal
 | Negative: variable -> literal.
 
 Inductive literal_eval: literal -> assignment -> bool -> Prop :=
-(* | lit_ev_atom: forall (α: assignment) (b: bool), literal_eval (Atom b) α b *)
 | lit_ev_pos: forall (v: variable) (α: assignment) (b: bool),
     (v/α ↦ b) -> literal_eval (Positive v) α b
 | lit_ev_neg: forall (v: variable) (α: assignment) (b: bool),
@@ -1632,7 +1656,7 @@ Proof.
 Defined.
 
   
-Definition to_dnf (ϕ: formula): {ψ: dnf | dnf_representation ϕ ψ}.
+Definition to_dnf_1 (ϕ: formula): {ψ: dnf | dnf_representation ϕ ψ}.
 Proof.
   assert (NEG := move_negations ϕ).
   destruct NEG as [neg_ϕ [EQ NEG]]. 
@@ -1671,17 +1695,47 @@ Proof.
   }
 Defined.
 
-(* Next note that for some formulas [to_dnf] can return 
-   
-*)    
-Compute (proj1_sig (to_dnf ((x0 ∧ x1) ∨ (x0 ∧ x1)))).
+(* Note that we can get things like x∧¬x in one monomial *)
+Definition all_monomials_satisfiable (ψ: dnf) :=
+  forall mon, mon el ψ -> exists α, monomial_eval mon α true.
 
 
-(* Definition certificate0 (ϕ: formula) (ξ: assignment): Prop := *)
+Definition to_dnf_2 (ϕ: formula):
+  {ψ: dnf | dnf_representation ϕ ψ
+            /\ all_monomials_satisfiable ψ}.
+Proof.
+Admitted.
 
+
+Definition comparable {T: Type} (xs ys: list T) :=
+  incl xs ys \/ incl ys xs.
+
+Definition all_monomials_disjoint (ψ: dnf) :=
+  forall (m1 m2: monomial),
+    m1 el ψ ->
+    m2 el ψ ->
+    comparable m1 m2 ->
+    m1 = m2.
+
+Definition to_dnf_3 (ϕ: formula):
+  {ψ: dnf | dnf_representation ϕ ψ
+            /\ all_monomials_satisfiable ψ
+            /\ NoDup ψ
+            /\ all_monomials_disjoint ψ}.
+Proof.
+Admitted.
+
+
+
+(* TODO: comment *)
+(* Next note that for some formulas [to_dnf] can return *)    
+Compute (proj1_sig (to_dnf_1 ((x0 ∧ x1) ∨ (x0 ∧ x1)))).
+
+(* TODO: comment *)
 Definition certificate1 (ϕ: formula) (ξ: assignment): Prop :=
-  forall α, equiv_assignments (vars_in ξ) α ξ -> ℇ (ϕ) α ≡ true. 
+  forall α, equiv_assignments (vars_in ξ) α ξ -> ℇ (ϕ) α ≡ true.
 
+(* TODO: comment *)
 Fixpoint monomial_to_certificate (m: monomial): assignment :=
   match m with
   | [] => []
@@ -1689,14 +1743,19 @@ Fixpoint monomial_to_certificate (m: monomial): assignment :=
   | Negative v :: m' => (v, false) :: monomial_to_certificate m'
   end.
 
+
+Definition certificate_to_assignments (ξ: certificate1): {αs: assignments | True}.
+  
+
+  
+
 Lemma theorem:
-  forall (ϕ: formula) (ψ: dnf),
+  forall (ϕ: formula) (ψ: dnf) (m: monomial),
     dnf_representation ϕ ψ ->
-    forall (m: monomial),
-      m el ψ ->
-      certificate1 ϕ (monomial_to_certificate m).
+    m el ψ ->
+    certificate1 ϕ (monomial_to_certificate m).
 Proof.
-  intros ? ? DNF mon INm ? EQU.
+  intros ? ? mon DNF INm ? EQU.
   apply DNF.
   constructor; exists mon; split; auto.
   constructor; intros l INl.
