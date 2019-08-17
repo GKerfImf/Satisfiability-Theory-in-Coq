@@ -503,13 +503,55 @@ Definition sets_all_variables (ϕ: formula) (α: assignment) :=
   incl (leaves ϕ) (vars_in α).
 
 
+Lemma test :
+  forall (vs: variables) (αs: assignments),
+    dupfree_a vs αs <->
+    NoDup αs /\ (forall α1 α2,
+                   α1 el αs ->
+                   α2 el αs ->
+                   α1 <> α2 ->
+                   ~ equiv_assignments vs α1 α2
+               ).
+Proof.
+  intros; split; [intros DUP| intros [DUP NE]].
+  { split.
+    { induction αs.
+      - constructor.
+      - admit. 
+    } 
+    { intros ? ? ? ? ? N.
+      admit. 
+    }
+  }
+  { 
+    induction αs.
+    - constructor.
+    - feed IHαs. admit. feed IHαs. admit.
+      
+      constructor; [ | assumption].
+      intros C.
 
+      admit.
+  }
+Admitted.
+
+
+Definition dupfree_ex (vs: variables) (αs: assignments) :=
+  NoDup αs /\
+  (forall α1 α2,
+      α1 el αs ->
+      α2 el αs ->
+      α1 <> α2 ->
+      ~ equiv_assignments vs α1 α2).
+               
+  
 (* TODO: del vs? *)
 Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
-  dupfree_a vs αs /\
+  dupfree_ex vs αs /\
+  (* dupfree_a vs αs /\ *)
   (forall α, α el αs -> sat_assignment ϕ α) /\
-  (forall α, sat_assignment ϕ α -> mem_a vs α αs) /\ (* TODO?: ∀ α, sat ϕ α -> ∃ β, α ≡ β ∧ β ∈ αs *)
-  (forall α, α el αs -> equi vs (vars_in α)). (* TODO: del this? *)
+  (*forall α, sat_assignment ϕ α -> mem_a vs α αs /\ *) 
+  (forall α, sat_assignment ϕ α -> exists β, equiv_assignments vs α β /\ β el αs).
 
 
 (* TODO: fix leaves to vars *)
@@ -519,10 +561,6 @@ Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
     length αs = n.
 
 Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
-
-
-
-
 
 
 
@@ -732,6 +770,63 @@ Fixpoint all_assignments_on (vs: variables): assignments :=
   | v::vs => map (fun α => (v,false)::α) (all_assignments_on vs)
               ++ map (fun α => (v,true)::α) (all_assignments_on vs)
   end.
+
+Lemma dfnn :
+  forall (T: Type) xs (a b: T), 
+    a <> b -> 
+    NoDup xs ->
+    NoDup (map (fun x => a :: x) xs ++ map (fun x =>  b :: x) xs).
+Proof.
+  intros T ? ? ? NEQ ND.
+  induction xs.
+  - simpl; constructor.
+  - apply NoDup_cons_iff in ND; destruct ND as [NEL ND].
+    feed IHxs; [assumption | ].
+     
+    Search _ (NoDup _ ).
+    simpl. 
+    apply NoDup_cons_iff; split.
+    { admit. } 
+    { 
+      assert (H : forall (T: Type) (l1 l2: list T), NoDup (l1 ++ l2) -> NoDup (l2 ++ l1)).
+      admit.
+      apply H.
+      simpl. apply NoDup_cons_iff; split.
+      intros C.
+      apply in_app_or in C; destruct C as [C|C].
+      { apply in_map_iff in C.
+        destruct C as [x [EQ EL]].
+        inversion EQ; subst x; clear EQ.
+        easy.
+      }
+      { apply in_map_iff in C.
+        destruct C as [x [EQ EL]].
+        inversion EQ; subst x; clear EQ.
+        easy.
+      }    
+      apply H; assumption.
+    } 
+Admitted.        
+    
+Lemma df:
+  forall vs,
+    NoDup vs ->
+    NoDup (all_assignments_on vs).
+Proof.
+  induction vs.
+  - intros. constructor; [intros C; easy | constructor ].
+  - intros.
+    apply NoDup_cons_iff in H; destruct H as [NEL ND].
+    feed IHvs; [assumption | ].
+    apply dfnn; [easy | assumption].
+Qed.
+
+Lemma dffil:
+  forall (T: Type) (vs: list T) (p: T -> bool),
+    NoDup vs ->
+    NoDup (filter p vs).
+Proof.
+Admitted.
   
 (* TODO: name *)
 Lemma correctness_all_assignments:
@@ -805,22 +900,25 @@ Definition sat_filter (ϕ: formula) (α: assignment): bool :=
   | right _ => false
   end.
 
-    
-
-
-
   
 Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
   assert(EX: { αs | list_of_sat_assignments (nodup eq_var_dec (leaves ϕ)) ϕ αs }).
   { unfold list_of_sat_assignments.
     exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (nodup eq_var_dec (leaves ϕ)))).
-    repeat split; intros.
-    - exfalso; apply TODO0.
-    - exfalso; apply TODO0.
-    - exfalso; apply TODO0.
-    - exfalso; apply TODO0.
-    - exfalso; apply TODO0.
+    repeat split.
+    - apply dffil, df, NoDup_nodup.
+    - intros ? ? EL1 EL2 NEQ EQ.
+      apply filter_In in EL1; destruct EL1 as [EL1 SAT1].
+      apply filter_In in EL2; destruct EL2 as [EL2 SAT2].
+      (* ??. *) exfalso; apply TODO0.
+    - intros ? EL.
+      apply filter_In in EL; destruct EL as [EL TR].
+      unfold sat_filter in *; destruct (dec121 ϕ α) as [D|D]; [ | easy].
+      destruct (sat_kek ϕ α D) as [b EV]; subst b.
+      assumption.
+    - intros ? SAT.
+      (* ?? *) exfalso; apply TODO0.
   }
   destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
   exfalso; apply TODO0.
