@@ -292,12 +292,6 @@ Proof.
 Defined.
 
 
-Lemma m1: (V 1) el (vars_in ([(V 0, true); (V 1, false); (V 2, false)])).
-Proof.
-  right; left; reflexivity. 
-Defined.
-
-(* Compute (proj1_sig (mapstob (V 1) [(V 0, true); (V 1, true); (V 2, false)] m1)). *)
 
 (* TODO: fix *)
 Definition assignment_on_variables (vs: list variable) (α: assignment) :=
