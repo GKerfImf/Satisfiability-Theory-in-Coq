@@ -1023,65 +1023,6 @@ Compute (proj1_sig (algorithm1 (x1 ∧ (x2 ⊕ x3) ⊕ x1 ∨ x2 ∨ x5))).
 
 
 
-(* Lemma kek1:
-  forall (ϕ: formula) (α: assignment) (b: bool),
-  forall (x: variable),
-    x / α ↦ true -> 
-    formula_eval ϕ α b <-> formula_eval (ϕ[x ↦ T]) α b.
-Proof.
-  induction ϕ; intros ? ? ? MAP; split; intros EV.
-  all: try assumption.
-  all: simpl in *.
-  { decide (x = v); [subst | ].
-    inversion_clear EV.
-    assert (EQ := todo2 _ _ _ _ MAP H); subst.
-    all: auto. }
-  { decide (x = v); [subst | ].
-    admit (* Ok *).
-    auto. }
-  { inversion_clear EV.
-    constructor. 
-    apply IHϕ; assumption. }
-  { inversion_clear EV.
-    constructor.
-    apply IHϕ with x; assumption. }
-  { inversion_clear EV.
-    - constructor; [apply IHϕ1| apply IHϕ2]; assumption.
-    - constructor; apply IHϕ1; assumption. 
-    - apply ev_conj_fr; apply IHϕ2; assumption. }
-  { inversion_clear EV. 
-    - constructor; [eapply IHϕ1 | eapply IHϕ2]; eauto.
-    - admit.
-    - admit. } 
-  { inversion_clear EV.
-    - constructor; [apply IHϕ1| apply IHϕ2]; assumption.
-    - constructor; apply IHϕ1; assumption. 
-    - apply ev_disj_tr; apply IHϕ2; assumption. } 
-  { admit. }
-Admitted. *)
-
-(* Lemma kek2 (ϕ: formula) (α: assignment) (b: bool):
-  forall (x: variable),
-    x / α ↦ false -> 
-    formula_eval ϕ α b <-> formula_eval (ϕ[x ↦ F]) α b.
-Proof.
-  intros ? MAP. 
-  split; intros EV. 
-  { induction ϕ.
-    - assumption.
-    - assumption.
-    - simpl; decide (x = v).
-      + subst.
-        inversion_clear EV.
-        assert (EQ := todo2 _ _ _ _ MAP H); subst.
-        constructor.
-      + assumption.
-    - simpl.
-      constructor.
-      admit (* ??? *).
-Admitted. *)
-
-
 Lemma substitute_equiv':
   forall (ϕ ψ1 ψ2: formula) (v: variable),
     (forall (α: assignment) (b: bool),       ℇ (ψ1) α ≡ b ->        ℇ (ψ2) α ≡ b) -> 
