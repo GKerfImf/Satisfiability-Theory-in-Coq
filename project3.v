@@ -355,6 +355,47 @@ Definition dupfree_a (vs: variables) (αs: assignments): Prop :=
   dupfree_e (equiv_assignments vs) αs.
 
 
+Lemma test :
+  forall (vs: variables) (αs: assignments),
+    dupfree_a vs αs <->
+    NoDup αs /\ (forall α1 α2,
+                   α1 el αs ->
+                   α2 el αs ->
+                   α1 <> α2 ->
+                   ~ equiv_assignments vs α1 α2
+               ).
+Proof.
+  intros; split; [intros DUP| intros [DUP NE]].
+  { split.
+    { induction αs.
+      - constructor.
+      - admit. 
+    } 
+    { intros ? ? ? ? ? N.
+      admit. 
+    }
+  }
+  { 
+    induction αs.
+    - constructor.
+    - feed IHαs. admit. feed IHαs. admit.      
+      constructor; [ | assumption].
+      intros C.
+      admit.
+  }
+Admitted.
+
+
+Definition dupfree_ex (vs: variables) (αs: assignments) :=
+  NoDup αs /\
+  (forall α1 α2,
+      α1 el αs ->
+      α2 el αs ->
+      α1 <> α2 ->
+      ~ equiv_assignments vs α1 α2).
+
+
+
 (* Definition incl_a (vs: variables) (αs1 αs2: assignments): Prop :=
   incl_e (equiv_assignments vs) αs1 αs2.
 
@@ -488,89 +529,7 @@ Definition unsat_assignment (ϕ: formula) (α: assignment) :=
     length αs = n. *)
 
 
-
-(* TODO: *)
-Fixpoint leaves (ϕ: formula): variables :=
-  match ϕ with
-  | T => [] | F => []
-  | Var v => [v]
-  | ¬ ϕ => leaves ϕ
-  | ϕ1 ∧ ϕ2 => leaves ϕ1 ++ leaves ϕ2
-  | ϕ1 ∨ ϕ2 => leaves ϕ1 ++ leaves ϕ2
-  end.
-
-(* => [V 0; V 1; V 0; V 1] *)
-Compute (leaves ([|V 0|] ⊕ [|V 1|])). 
-
-(* Definition of the size of a formula. *)
-Definition formula_size (ϕ: formula): nat :=
-  length (leaves ϕ).
-
-(* => 4 *)
-Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
-
-Definition sets_all_variables (ϕ: formula) (α: assignment) := 
-  incl (leaves ϕ) (vars_in α).
-
-
-Lemma test :
-  forall (vs: variables) (αs: assignments),
-    dupfree_a vs αs <->
-    NoDup αs /\ (forall α1 α2,
-                   α1 el αs ->
-                   α2 el αs ->
-                   α1 <> α2 ->
-                   ~ equiv_assignments vs α1 α2
-               ).
-Proof.
-  intros; split; [intros DUP| intros [DUP NE]].
-  { split.
-    { induction αs.
-      - constructor.
-      - admit. 
-    } 
-    { intros ? ? ? ? ? N.
-      admit. 
-    }
-  }
-  { 
-    induction αs.
-    - constructor.
-    - feed IHαs. admit. feed IHαs. admit.      
-      constructor; [ | assumption].
-      intros C.
-      admit.
-  }
-Admitted.
-
-
-Definition dupfree_ex (vs: variables) (αs: assignments) :=
-  NoDup αs /\
-  (forall α1 α2,
-      α1 el αs ->
-      α2 el αs ->
-      α1 <> α2 ->
-      ~ equiv_assignments vs α1 α2).
-               
-  
-(* TODO: del vs? *)
-Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
-  dupfree_ex vs αs /\
-  (* dupfree_a vs αs /\ *)
-  (forall α, α el αs -> sat_assignment ϕ α) /\
-  (*forall α, sat_assignment ϕ α -> mem_a vs α αs /\ *) 
-  (forall α, sat_assignment ϕ α -> exists β, equiv_assignments vs α β /\ β el αs).
-
-
-(* TODO: fix leaves to vars *)
-Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
-  exists (αs: assignments),
-    list_of_sat_assignments (leaves ϕ) ϕ αs /\
-    length αs = n.
-
-Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
-
-
+(* TODO: comment *)
 
 Reserved Notation "ϕ [ x ↦ ψ ]" (at level 10).
 
@@ -586,175 +545,95 @@ Fixpoint substitute (ϕ: formula) (v: variable) (ψ: formula): formula :=
 where "ϕ [ x ↦ f ]" := (substitute ϕ x f).
 
 
-Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
-  {v: variable | v el (leaves ϕ)}.
-Proof.
-  unfold formula_size in NE.
-  destruct (leaves ϕ).
-  { simpl in NE; omega. }
-  { exists v; left; reflexivity. }
-Defined.
 
-(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
-  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
-*)
+(* TODO: *)
+Fixpoint leaves (ϕ: formula): variables :=
+  match ϕ with
+  | T => [] | F => []
+  | Var v => [v]
+  | ¬ ϕ => leaves ϕ
+  | ϕ1 ∧ ϕ2 => leaves ϕ1 ++ leaves ϕ2
+  | ϕ1 ∨ ϕ2 => leaves ϕ1 ++ leaves ϕ2
+  end.
 
-
-Definition equivalent (ϕ1 ϕ2: formula) :=
-  forall (α: assignment) (b: bool), ℇ (ϕ1) α ≡ b <-> ℇ (ϕ2) α ≡ b.
-
-Lemma formula_equivalence_refl: 
-  forall (ϕ: formula),
-    equivalent ϕ ϕ.
-Proof.
-Admitted.
-
-Lemma formula_equivalence_sym: 
-  forall (ϕ ψ: formula),
-    equivalent ϕ ψ ->
-    equivalent ψ ϕ.
-Proof.
-Admitted.
-
-Lemma formula_equivalence_trans:
-  forall (ϕ1 ϕ2 ϕ3: formula),
-    equivalent ϕ1 ϕ2 ->
-    equivalent ϕ2 ϕ3 ->
-    equivalent ϕ1 ϕ3.
-Proof.
-Admitted.
-
-Lemma formula_equivalence_neg: 
-  forall (ϕ ψ: formula),
-    equivalent ϕ (¬ ψ) ->
-    equivalent (¬ ϕ) ψ.
-Proof.
-Admitted.
-
-Lemma formula_equivalence_T_neg_F: 
-  equivalent T (¬ F).
-Proof.
-  intros α b; split; intros.
-  - inversion_clear H; constructor; constructor.
-  - inversion_clear H.
-    destruct b; simpl in *.
-    constructor.
-    inversion_clear H0.
-Qed.
-
-Lemma fo_eq_1:
-  forall (ϕ1 ϕ2 ψ1 ψ2: formula),
-    equivalent ϕ1 ψ1 ->
-    equivalent ϕ2 ψ2 ->
-    equivalent (ϕ1 ∧ ϕ2) (ψ1 ∧ ψ2).
-Proof.
-Admitted.
-
-Corollary fo_eq_2:
-  forall (ϕ1 ϕ2: formula),
-    equivalent ϕ1 T ->
-    equivalent ϕ2 T ->
-    equivalent (ϕ1 ∧ ϕ2) T.
-Proof.
-  intros.
-  apply formula_equivalence_trans with (T ∧ T).
-  apply fo_eq_1; auto.
-  admit.
-Admitted.
-
-(* TODO: More general form? *)
-Corollary fo_eq_3:
-  forall (ϕ1 ϕ2: formula),
-    equivalent ϕ1 F ->
-    equivalent (ϕ1 ∧ ϕ2) F.
-Proof.
-  intros.
-  admit.
-Admitted.
-
-(* TODO: More general form? *)
-Corollary formula_equi_1:
-  forall (ϕ1 ϕ2 ψ: formula),
-    equivalent (ϕ1 ∧ ϕ2) ψ ->
-    equivalent (ϕ2 ∧ ϕ1) ψ.
-Proof.
-  intros.
-  admit.
-Admitted.
-
-(* TODO: More general form? *)
-Corollary formula_equi_3:
-  forall (ϕ1 ϕ2 ψ: formula),
-    equivalent (ϕ1 ∨ ϕ2) ψ ->
-    equivalent (ϕ2 ∨ ϕ1) ψ.
-Proof.
-  intros.
-  admit.
-Admitted.
+(* => [V 0; V 1; V 0; V 1] *)
+Compute (leaves ([|V 0|] ⊕ [|V 1|])). 
 
 
-(* TODO: More general form? *)
-Lemma formula_equi_2:
-  forall (ϕ1 ϕ2: formula),
-    equivalent ϕ1 T -> 
-    equivalent (ϕ1 ∨ ϕ2) T.
-Proof.
-  intros ? ? EQ ? ?; split; intros EV.
-  { destruct b.
-    - constructor.
-    - inversion_clear EV.
-      apply EQ in H; inversion_clear H.
-  }
-  { destruct b.
-    - apply ev_disj_tl.
-      apply EQ; assumption.
-    - inversion_clear EV.
-  }
-Defined.
-
-Lemma fo_eq_11:
-  forall (ϕ1 ϕ2 ψ1 ψ2: formula),
-    equivalent ϕ1 ψ1 ->
-    equivalent ϕ2 ψ2 ->
-    equivalent (ϕ1 ∨ ϕ2) (ψ1 ∨ ψ2).
-Proof.
-Admitted.
-
-Corollary fo_eq_21:
-  forall (ϕ1 ϕ2: formula),
-    equivalent ϕ1 F ->
-    equivalent ϕ2 F ->
-    equivalent (ϕ1 ∨ ϕ2) F.
-Proof.
-  intros.
-  admit.
-Admitted.
-
-Lemma fo_eq_4:
-  forall (ϕ ψ: formula),
-    equivalent ϕ ψ ->
-    equivalent (¬ ϕ) (¬ ψ).
-Proof.
-  intros.
-  admit.
-Admitted.
+(* Definition of the size of a formula. *)
+Definition formula_size (ϕ: formula): nat :=
+  length (leaves ϕ).
 
 
-Lemma fo_eq_5:
-  forall (ϕl ϕr ψ: formula),
-    equivalent (ϕl ∧ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∨ ¬ ϕr)) ψ.
-Proof.
-  intros ? ? ?; split; intros EQ.
-  
-Admitted.
+Section FormulaProp.
 
-Lemma fo_eq_6:
-  forall (ϕl ϕr ψ: formula),
-    equivalent (ϕl ∨ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∧ ¬ ϕr)) ψ.
-Proof.
-  intros ? ? ?; split; intros EQ.
-  
-Admitted.
+  Lemma todo9:
+    forall (ϕ: formula), formula_size (¬ ϕ) = formula_size ϕ.
+  Proof.
+  Admitted.
+
+  Lemma todo10:
+    forall (ϕl ϕr: formula), formula_size (ϕl ∧ ϕr) = formula_size ϕl + formula_size ϕr.
+  Proof.
+  Admitted.
+
+  Lemma todo11:
+    forall (ϕl ϕr: formula), formula_size (ϕl ∨ ϕr) = formula_size ϕl + formula_size ϕr.
+  Proof.
+    intros; unfold formula_size; simpl; rewrite app_length; reflexivity.
+  Defined.
+
+
+  Lemma todo3:
+    forall (ϕ: formula) (x: variable),
+      x el leaves ϕ -> 
+      formula_size (ϕ[x ↦ T]) < formula_size ϕ.
+  Proof.
+    induction ϕ; intros ? L.
+    { easy. }
+    { easy. }
+    { apply singl_in in L; subst.
+      simpl; decide (v = v); [compute; omega | easy]. }
+    { simpl; rewrite todo9, todo9; eauto. }
+    { simpl; rewrite todo10, todo10.
+      admit.  }
+    { admit. }
+    
+  Admitted.
+
+  Lemma todo5:
+    forall (ϕ: formula) (x: variable),
+      x el leaves ϕ -> 
+      formula_size (ϕ[x ↦ F]) < formula_size ϕ.
+  Proof.
+
+  Admitted.
+
+
+  Lemma todo4:
+    forall (ϕ: formula),
+      formula_size ϕ > 0 -> 
+      exists x,
+        x el leaves ϕ /\
+        formula_size (ϕ[x ↦ T]) < formula_size ϕ.
+  Proof.
+
+  Admitted.
+
+End FormulaProp.
+
+(* => 4 *)
+Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
+
+(* TODO: comment *)
+Definition formula_vars (ϕ: formula) :=
+  nodup eq_var_dec (leaves ϕ).
+
+Definition sets_all_variables (ϕ: formula) (α: assignment) := 
+  incl (leaves ϕ) (vars_in α).
+
+Definition sets_all_variables_ex (ϕ: formula) (α: assignment) := 
+  incl (formula_vars ϕ) (vars_in α).
 
 
 Lemma sets_all_variables_dec:
@@ -775,6 +654,204 @@ Proof.
       specialize (C v); feed C; [left; reflexivity | ]; assumption.
   } 
 Defined.
+
+  
+(* TODO: del vs? *)
+Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
+  dupfree_ex vs αs /\
+  (forall α, α el αs -> sat_assignment ϕ α) /\
+  (forall α, sat_assignment ϕ α -> exists β, equiv_assignments vs α β /\ β el αs).
+
+
+
+(* TODO: fix leaves to vars *)
+Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
+  exists (αs: assignments),
+    list_of_sat_assignments (leaves ϕ) ϕ αs /\
+    length αs = n.
+
+Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
+
+(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
+  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
+*)
+
+
+
+
+Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
+  {v: variable | v el (leaves ϕ)}.
+Proof.
+  unfold formula_size in NE.
+  destruct (leaves ϕ).
+  { simpl in NE; omega. }
+  { exists v; left; reflexivity. }
+Defined.
+
+
+(* TODO: comment *)
+Definition equivalent (ϕ1 ϕ2: formula) :=
+  forall (α: assignment) (b: bool), ℇ (ϕ1) α ≡ b <-> ℇ (ϕ2) α ≡ b.
+
+Section PropertiesOfEquivalence.
+  
+  Lemma formula_equivalence_refl: 
+    forall (ϕ: formula),
+      equivalent ϕ ϕ.
+  Proof.
+  Admitted.
+
+  Lemma formula_equivalence_sym: 
+    forall (ϕ ψ: formula),
+      equivalent ϕ ψ ->
+      equivalent ψ ϕ.
+  Proof.
+  Admitted.
+
+  Lemma formula_equivalence_trans:
+    forall (ϕ1 ϕ2 ϕ3: formula),
+      equivalent ϕ1 ϕ2 ->
+      equivalent ϕ2 ϕ3 ->
+      equivalent ϕ1 ϕ3.
+  Proof.
+  Admitted.
+
+
+  Lemma formula_equivalence_neg: 
+    forall (ϕ ψ: formula),
+      equivalent ϕ (¬ ψ) ->
+      equivalent (¬ ϕ) ψ.
+  Proof.
+  Admitted.
+
+  Lemma formula_equivalence_T_neg_F: 
+    equivalent T (¬ F).
+  Proof.
+    intros α b; split; intros.
+    - inversion_clear H; constructor; constructor.
+    - inversion_clear H.
+      destruct b; simpl in *.
+      constructor.
+      inversion_clear H0.
+  Qed.
+
+  Lemma fo_eq_1:
+    forall (ϕ1 ϕ2 ψ1 ψ2: formula),
+      equivalent ϕ1 ψ1 ->
+      equivalent ϕ2 ψ2 ->
+      equivalent (ϕ1 ∧ ϕ2) (ψ1 ∧ ψ2).
+  Proof.
+  Admitted.
+
+  Corollary fo_eq_2:
+    forall (ϕ1 ϕ2: formula),
+      equivalent ϕ1 T ->
+      equivalent ϕ2 T ->
+      equivalent (ϕ1 ∧ ϕ2) T.
+  Proof.
+    intros.
+    apply formula_equivalence_trans with (T ∧ T).
+    apply fo_eq_1; auto.
+    admit.
+  Admitted.
+
+  (* TODO: More general form? *)
+  Corollary fo_eq_3:
+    forall (ϕ1 ϕ2: formula),
+      equivalent ϕ1 F ->
+      equivalent (ϕ1 ∧ ϕ2) F.
+  Proof.
+    intros.
+    admit.
+  Admitted.
+
+  (* TODO: More general form? *)
+  Corollary formula_equi_1:
+    forall (ϕ1 ϕ2 ψ: formula),
+      equivalent (ϕ1 ∧ ϕ2) ψ ->
+      equivalent (ϕ2 ∧ ϕ1) ψ.
+  Proof.
+    intros.
+    admit.
+  Admitted.
+
+  (* TODO: More general form? *)
+  Corollary formula_equi_3:
+    forall (ϕ1 ϕ2 ψ: formula),
+      equivalent (ϕ1 ∨ ϕ2) ψ ->
+      equivalent (ϕ2 ∨ ϕ1) ψ.
+  Proof.
+    intros.
+    admit.
+  Admitted.
+
+
+  (* TODO: More general form? *)
+  Lemma formula_equi_2:
+    forall (ϕ1 ϕ2: formula),
+      equivalent ϕ1 T -> 
+      equivalent (ϕ1 ∨ ϕ2) T.
+  Proof.
+    intros ? ? EQ ? ?; split; intros EV.
+    { destruct b.
+      - constructor.
+      - inversion_clear EV.
+        apply EQ in H; inversion_clear H.
+    }
+    { destruct b.
+      - apply ev_disj_tl.
+        apply EQ; assumption.
+      - inversion_clear EV.
+    }
+  Defined.
+
+  Lemma fo_eq_11:
+    forall (ϕ1 ϕ2 ψ1 ψ2: formula),
+      equivalent ϕ1 ψ1 ->
+      equivalent ϕ2 ψ2 ->
+      equivalent (ϕ1 ∨ ϕ2) (ψ1 ∨ ψ2).
+  Proof.
+  Admitted.
+
+  Corollary fo_eq_21:
+    forall (ϕ1 ϕ2: formula),
+      equivalent ϕ1 F ->
+      equivalent ϕ2 F ->
+      equivalent (ϕ1 ∨ ϕ2) F.
+  Proof.
+    intros.
+    admit.
+  Admitted.
+
+  Lemma fo_eq_4:
+    forall (ϕ ψ: formula),
+      equivalent ϕ ψ ->
+      equivalent (¬ ϕ) (¬ ψ).
+  Proof.
+    intros.
+    admit.
+  Admitted.
+
+
+  Lemma fo_eq_5:
+    forall (ϕl ϕr ψ: formula),
+      equivalent (ϕl ∧ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∨ ¬ ϕr)) ψ.
+  Proof.
+    intros ? ? ?; split; intros EQ.
+    
+  Admitted.
+
+  Lemma fo_eq_6:
+    forall (ϕl ϕr ψ: formula),
+      equivalent (ϕl ∨ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∧ ¬ ϕr)) ψ.
+  Proof.
+    intros ? ? ?; split; intros EQ.
+    
+  Admitted.
+
+End PropertiesOfEquivalence.
+  
+
 
 
 (*** Alg 1: *)
@@ -850,10 +927,12 @@ Lemma dffil:
     NoDup (filter p vs).
 Proof.
 Admitted.
-  
+
+
 (* TODO: name *)
 Lemma correctness_all_assignments:
-  forall (vs: variables), list_of_all_assignments vs (all_assignments_on vs).
+  forall (vs: variables),
+    list_of_all_assignments vs (all_assignments_on vs).
 Proof.
   intros; split.
   { induction vs.
@@ -903,36 +982,34 @@ Defined.
 
 
 
-
-
 Definition sat_filter (ϕ: formula) (α: assignment): bool :=
   match sets_all_variables_dec ϕ α with 
   | left _ SETS => let '(exist _ b _) :=  sat_kek ϕ α SETS in b
   | right _ => false
   end.
 
+ 
   
 Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
   assert(EX: { αs | list_of_sat_assignments (nodup eq_var_dec (leaves ϕ)) ϕ αs }).
-  { unfold list_of_sat_assignments.
-    exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (nodup eq_var_dec (leaves ϕ)))).
+  { exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (nodup eq_var_dec (leaves ϕ)))).
     repeat split.
     - apply dffil, df, NoDup_nodup.
     - intros ? ? EL1 EL2 NEQ EQ.
       apply filter_In in EL1; destruct EL1 as [EL1 SAT1].
       apply filter_In in EL2; destruct EL2 as [EL2 SAT2].
-      (* ??. *) exfalso; apply TODO0.
+      exfalso; apply TODO0 (* 7/10 *).
     - intros ? EL.
       apply filter_In in EL; destruct EL as [EL TR].
       unfold sat_filter in *; destruct (sets_all_variables_dec ϕ α) as [D|D]; [ | easy].
       destruct (sat_kek ϕ α D) as [b EV]; subst b.
       assumption.
     - intros ? SAT.
-      (* ?? *) exfalso; apply TODO0.
+      exfalso; apply TODO0 (* 7/10 *).
   }
   destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
-  exfalso; apply TODO0.
+  exfalso; apply TODO0 (* 4/10 *).
 Defined.
 
 
@@ -944,58 +1021,7 @@ Compute (proj1_sig (algorithm1 (x1 ∧ (x2 ⊕ x3) ⊕ x1 ∨ x2 ∨ x5))).
 (** With transformation ϕ = (ϕ[x ↦ T] ∧ x) ∨ (ϕ[x ↦ F] ∧ ¬x). *)
 
 
-Lemma todo9:
-  forall (ϕ: formula), formula_size (¬ ϕ) = formula_size ϕ.
-Proof.
-Admitted.
 
-Lemma todo10:
-  forall (ϕl ϕr: formula), formula_size (ϕl ∧ ϕr) = formula_size ϕl + formula_size ϕr.
-Proof.
-Admitted.
-
-Lemma todo11:
-  forall (ϕl ϕr: formula), formula_size (ϕl ∨ ϕr) = formula_size ϕl + formula_size ϕr.
-Proof.
-  intros; unfold formula_size; simpl; rewrite app_length; reflexivity.
-Defined.
-
-
-Lemma todo3:
-  forall (ϕ: formula) (x: variable),
-    x el leaves ϕ -> 
-    formula_size (ϕ[x ↦ T]) < formula_size ϕ.
-Proof.
-  induction ϕ; intros ? L.
-  { easy. }
-  { easy. }
-  { apply singl_in in L; subst.
-    simpl; decide (v = v); [compute; omega | easy]. }
-  { simpl; rewrite todo9, todo9; eauto. }
-  { simpl; rewrite todo10, todo10.
-    admit.  }
-  { admit. }
-    
-Admitted.
-
-Lemma todo5:
-  forall (ϕ: formula) (x: variable),
-    x el leaves ϕ -> 
-    formula_size (ϕ[x ↦ F]) < formula_size ϕ.
-Proof.
-
-Admitted.
-
-
-Lemma todo4:
-  forall (ϕ: formula),
-    formula_size ϕ > 0 -> 
-    exists x,
-      x el leaves ϕ /\
-      formula_size (ϕ[x ↦ T]) < formula_size ϕ.
-Proof.
-
-Admitted.
 
 (* Lemma kek1:
   forall (ϕ: formula) (α: assignment) (b: bool),
@@ -1430,6 +1456,7 @@ Definition monomial_unsatisfiable (m: monomial) :=
   forall (α: assignment), monomial_unsat_assignment m α.
 
 
+(* TODO: comment *)
 Definition dnf := list monomial.
 
 Inductive dnf_eval: dnf -> assignment -> bool -> Prop :=
@@ -1449,6 +1476,7 @@ Definition equivalent_dnf (ψ1 ψ2: dnf) :=
 Definition dnf_representation (ϕ: formula) (ψ: dnf) :=
  forall (α: assignment) (b: bool),
    formula_eval ϕ α b <-> dnf_eval ψ α b.
+
 
 (* *)
 Lemma lemma1:
@@ -1517,12 +1545,16 @@ Fixpoint monomial_to_certificate (m: monomial): assignment :=
   | Negative v :: m' => (v, false) :: monomial_to_certificate m'
   end.
 
+(* TODO: comment *)
 Definition dnf_to_certs (ψ: dnf): assignments := map monomial_to_certificate ψ.
 
 (* TODO: *)
-Definition cert_to_assign (ξ: assignment): assignments := [[]; []; []].
-Definition certs_to_assigns (ξs: assignments): assignments := flat_map cert_to_assign ξs.
+Definition cert_to_assign (ϕ: formula) (ξ: assignment): assignments :=
+  map (fun α => ξ ++ α) (all_assignments_on (leaves ϕ)).
 
+Definition certs_to_assigns (ϕ: formula) (ξs: assignments): assignments :=
+  flat_map (cert_to_assign ϕ) ξs.
+  
 
 Theorem th1:
   forall (ϕ: formula) (ψ: dnf),
@@ -1537,7 +1569,7 @@ Proof.
   set (n_vs := length vars).
 
   exists (fold_right Nat.add 0 (map (fun n => Nat.pow 2 n) (map (fun m => n_vs - length m) ψ))).
-  exists (certs_to_assigns (dnf_to_certs ψ)); repeat split.
+  exists (certs_to_assigns ϕ (dnf_to_certs ψ)); repeat split.
   { clear DNF.
     unfold certs_to_assigns.
     admit (* 5/10  *).
@@ -1555,9 +1587,9 @@ Proof.
   }
   { clear DNF; induction ψ.
     { reflexivity. }
-    { simpl; rewrite IHψ.
-      simpl.
-      admit (* 4/10 *).
+    { simpl; rewrite app_length, IHψ, Nat.add_cancel_r.
+      (* 2/10 *)
+      admit.
     }
   }     
 Admitted.
