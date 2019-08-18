@@ -30,7 +30,20 @@ Lemma TODO6:
   False.
 Proof. Admitted.
 
-(*** Qed ~> Defined *)
+Lemma TODO7:
+  False.
+Proof. Admitted.
+
+Lemma TODO8:
+  False.
+Proof. Admitted.
+
+Lemma TODO9:
+  False.
+Proof. Admitted.
+
+
+(*** Qed. ~> Defined. *)
 
 Lemma app_length: forall {A: Type} (l l': list A), length (l++l') = length l + length l'.
 Proof.
@@ -42,7 +55,7 @@ Proof.
   destruct n; now split.
 Defined.
 
-(*** Util. *)
+(*** Feed. *)
 
 (* This tactic feeds the precondition of an implication in order to derive the conclusion
    (taken from http://comments.gmane.org/gmane.science.mathematics.logic.coq.club/7013).
@@ -73,6 +86,7 @@ Ltac feed_n n H := match constr:(n) with
   | (S ?m) => feed H ; [| feed_n m H]
   end.
 
+(*** Smolka's *)
 
 Definition dec X := {X} + {~X}.
 Notation "'eq_dec' X" := (forall x y: X, dec (x = y)) (at level 70).
@@ -107,6 +121,8 @@ Instance nat_eq_dec:
 Proof.
   intros x y. hnf. decide equality.
 Defined.
+
+(*** ??? *)
 
 Definition equi {X: Type} (A B: list X) : Prop :=
   incl A B /\ incl B A.
@@ -206,11 +222,22 @@ Lemma mem_map_iff:
 Proof.
 Admitted.
 
-Fixpoint dupfree_e {X: Type} (equiv: X -> X -> Prop) (xs: list X): Prop :=
+Fixpoint dupfree_rel {X: Type} (rel: X -> X -> Prop) (xs: list X): Prop :=
   match xs with
   | [] => True
-  | h::tl => (~ mem_e equiv h tl) /\ (dupfree_e equiv tl)
+  | h::tl => (~ mem_e rel h tl) /\ (dupfree_rel rel tl)
   end.
+
+(* Definition dufree *)
+
+
+(* TODO: name *)
+Definition set_with {X: Type} (p: X -> Prop) (xs: list X): Prop :=
+  forall x, x el xs -> p x.
+
+(* TODO: name *)
+Definition set_with_all {X: Type} (rel: X -> X -> Prop) (p: X -> Prop) (xs: list X): Prop :=
+  forall x, p x -> exists y, rel x y /\ y el xs.
 
 
 (*** Assignments. *)
@@ -246,13 +273,18 @@ Definition variables := list variable.
 Definition assignment := list (variable * bool).
 Definition assignments := list assignment.
 
+(* I don't like "map" here. *)
 (* TODO: comment *)
 Fixpoint vars_in (α: assignment): variables :=
-  map fst α.
+  match α with
+  | [] => []
+  | (v,b)::tl => v :: vars_in tl
+  end.
 
 (* TODO: comment *)
 Reserved Notation "v / α ↦ b" (at level 10).
 
+(* TODO: fix naming *)
 Inductive mapsto: variable -> assignment -> bool -> Prop := 
 | maps_hd: forall var α_tl b,
     var/((var, b) :: α_tl) ↦ b
@@ -260,6 +292,7 @@ Inductive mapsto: variable -> assignment -> bool -> Prop :=
     var <> var' -> (var/α ↦ b) -> (var/((var',c)::α) ↦ b)
 where "v / α ↦ b" := (mapsto v α b).
 
+(* TODO: name *)
 Lemma todo2:
   forall (α: assignment) (v: variable) (b1 b2: bool),
   v / α ↦ b1 ->
@@ -270,8 +303,16 @@ Proof.
   induction α.
   { inversion M1. }
   { destruct a.
-    admit. }
-Admitted.
+    decide (v = v0); [subst | ].
+    { inversion M1; subst; [ | exfalso; auto].
+      inversion M2; subst; [reflexivity | exfalso; auto].
+    }
+    { inversion M1; subst; [exfalso; auto | ].
+      inversion M2; subst; [exfalso; auto | ].
+      apply IHα; auto.
+    }
+  }
+Qed.
 
 Lemma mapsto_dec:
   forall (α: assignment) (v: variable),
@@ -298,7 +339,6 @@ Definition ext_assignment (α ext_α: assignment) :=
     v el vars_in α ->
     v / α ↦ b ->
     v / ext_α ↦ b.
-  
 
 (* TODO: comment *)
 Definition equiv_assignments (vs: variables) (α1 α2: assignment) :=
@@ -313,11 +353,6 @@ Definition disjoint_assignments (vs: variables) (α1 α2: assignment) :=
     v / α1 ↦ b /\
     v / α2 ↦ (negb b).
 
-
-(* TODO: fix *)
-(* Definition assignment_on_variables (vs: list variable) (α: assignment) :=
-  equi vs (vars_in α).
-*)
 
 (* TODO: comment *)
 (* Lemma assignments_on_vars_dec:
@@ -352,7 +387,15 @@ Definition mem_a (vs: variables) (α: assignment) (αs: assignments): Prop :=
 
 (* *)
 Definition dupfree_a (vs: variables) (αs: assignments): Prop :=
-  dupfree_e (equiv_assignments vs) αs.
+  dupfree_rel (equiv_assignments vs) αs.
+
+Definition dupfree_ex (vs: variables) (αs: assignments) :=
+  NoDup αs /\
+  (forall α1 α2,
+      α1 el αs ->
+      α2 el αs ->
+      α1 <> α2 ->
+      ~ equiv_assignments vs α1 α2).
 
 
 Lemma test :
@@ -386,13 +429,7 @@ Proof.
 Admitted.
 
 
-Definition dupfree_ex (vs: variables) (αs: assignments) :=
-  NoDup αs /\
-  (forall α1 α2,
-      α1 el αs ->
-      α2 el αs ->
-      α1 <> α2 ->
-      ~ equiv_assignments vs α1 α2).
+
 
 
 
@@ -510,23 +547,7 @@ Definition unsat_assignment (ϕ: formula) (α: assignment) :=
   formula_eval ϕ α false.
 
 
-(* Variables are important.
-   
-   Maybe it's a bad deifintion, but consider a formula 
-         x1 ∨ x2 ∨ T.
-   How many sat as. are there? 
-   My answer would be  "On which variables?" 
-    That is, assignments [x1 ↦ F] [x1 ↦ T, x3 ↦ T] 
-    are both sat. ass. even though the first one 
-    doesn't set variable x2, and the second sets 
-    a variable x3.
 
- *)
-
-(* Definition number_of_sat_assignments (vs: variables) (ϕ: formula) (n: nat) :=
-  forall (αs: assignments),
-    list_of_sat_assignments vs ϕ αs ->
-    length αs = n. *)
 
 
 (* TODO: comment *)
@@ -549,7 +570,7 @@ where "ϕ [ x ↦ f ]" := (substitute ϕ x f).
 (* TODO: *)
 Fixpoint leaves (ϕ: formula): variables :=
   match ϕ with
-  | T => [] | F => []
+  | T | F => []
   | Var v => [v]
   | ¬ ϕ => leaves ϕ
   | ϕ1 ∧ ϕ2 => leaves ϕ1 ++ leaves ϕ2
@@ -563,6 +584,9 @@ Compute (leaves ([|V 0|] ⊕ [|V 1|])).
 (* Definition of the size of a formula. *)
 Definition formula_size (ϕ: formula): nat :=
   length (leaves ϕ).
+
+(* => 4 *)
+Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
 
 
 Section FormulaProp.
@@ -622,8 +646,16 @@ Section FormulaProp.
 
 End FormulaProp.
 
-(* => 4 *)
-Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
+
+Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
+  {v: variable | v el leaves ϕ}.
+Proof.
+  unfold formula_size in NE.
+  destruct (leaves ϕ).
+  { simpl in NE; omega. }
+  { exists v; left; reflexivity. }
+Defined.
+
 
 (* TODO: comment *)
 Definition formula_vars (ϕ: formula) :=
@@ -632,9 +664,10 @@ Definition formula_vars (ϕ: formula) :=
 Definition sets_all_variables (ϕ: formula) (α: assignment) := 
   incl (leaves ϕ) (vars_in α).
 
+(*
 Definition sets_all_variables_ex (ϕ: formula) (α: assignment) := 
   incl (formula_vars ϕ) (vars_in α).
-
+*)
 
 Lemma sets_all_variables_dec:
   forall (ϕ: formula) (α:assignment), dec (sets_all_variables ϕ α).
@@ -655,41 +688,9 @@ Proof.
   } 
 Defined.
 
-  
-(* TODO: del vs? *)
-Definition list_of_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
-  dupfree_ex vs αs /\
-  (forall α, α el αs -> sat_assignment ϕ α) /\
-  (forall α, sat_assignment ϕ α -> exists β, equiv_assignments vs α β /\ β el αs).
-
-
-
-(* TODO: fix leaves to vars *)
-Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
-  exists (αs: assignments),
-    list_of_sat_assignments (leaves ϕ) ϕ αs /\
-    length αs = n.
-
-Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
-
-(* Definition vars_in_f (ϕ: formula) (vs: variables) := 
-  NoDup vs /\ incl vs (leaves ϕ) /\ incl (leaves ϕ) vs.
-*)
-
-
-
-
-Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
-  {v: variable | v el (leaves ϕ)}.
-Proof.
-  unfold formula_size in NE.
-  destruct (leaves ϕ).
-  { simpl in NE; omega. }
-  { exists v; left; reflexivity. }
-Defined.
-
 
 (* TODO: comment *)
+
 Definition equivalent (ϕ1 ϕ2: formula) :=
   forall (α: assignment) (b: bool), ℇ (ϕ1) α ≡ b <-> ℇ (ϕ2) α ≡ b.
 
@@ -735,6 +736,7 @@ Section PropertiesOfEquivalence.
       inversion_clear H0.
   Qed.
 
+
   Lemma fo_eq_1:
     forall (ϕ1 ϕ2 ψ1 ψ2: formula),
       equivalent ϕ1 ψ1 ->
@@ -742,6 +744,15 @@ Section PropertiesOfEquivalence.
       equivalent (ϕ1 ∧ ϕ2) (ψ1 ∧ ψ2).
   Proof.
   Admitted.
+
+  Lemma fo_eq_11:
+    forall (ϕ1 ϕ2 ψ1 ψ2: formula),
+      equivalent ϕ1 ψ1 ->
+      equivalent ϕ2 ψ2 ->
+      equivalent (ϕ1 ∨ ϕ2) (ψ1 ∨ ψ2).
+  Proof.
+  Admitted.
+  
 
   Corollary fo_eq_2:
     forall (ϕ1 ϕ2: formula),
@@ -805,13 +816,7 @@ Section PropertiesOfEquivalence.
     }
   Defined.
 
-  Lemma fo_eq_11:
-    forall (ϕ1 ϕ2 ψ1 ψ2: formula),
-      equivalent ϕ1 ψ1 ->
-      equivalent ϕ2 ψ2 ->
-      equivalent (ϕ1 ∨ ϕ2) (ψ1 ∨ ψ2).
-  Proof.
-  Admitted.
+
 
   Corollary fo_eq_21:
     forall (ϕ1 ϕ2: formula),
@@ -854,23 +859,33 @@ End PropertiesOfEquivalence.
 
 
 
-(*** Alg 1: *)
-(** Just make the list of all assignments, and then filter *)
-(** This algorithm is quite boring. *)
+(* TODO: comment *)
+Definition set_with_sat_assignments (ϕ: formula) (αs: assignments) :=
+  set_with (sat_assignment ϕ) αs.
+
+Definition set_with_all_sat_assignments (ϕ: formula) (αs: assignments) :=
+  set_with_all (equiv_assignments (leaves ϕ)) (sat_assignment ϕ) αs.
 
 
-(* TODO: change definition of dupfree??? *)
-Definition list_of_all_assignments (vs: variables) (αs: assignments) :=
-  dupfree_a vs αs /\
-  (forall α, exists β, β el αs /\ equiv_assignments vs α β). 
 
 
-Fixpoint all_assignments_on (vs: variables): assignments :=
-  match vs with
-  | [] => [[]]
-  | v::vs => map (fun α => (v,false)::α) (all_assignments_on vs)
-              ++ map (fun α => (v,true)::α) (all_assignments_on vs)
-  end.
+  
+(* TODO: del variables? *)
+(* TODO: add variables? *)
+Definition list_of_all_sat_assignments (vs: variables) (ϕ: formula) (αs: assignments) :=
+  dupfree_ex vs αs /\
+  set_with_sat_assignments ϕ αs /\
+  set_with_all_sat_assignments ϕ αs.
+
+(* TODO: fix leaves to vars *)
+Definition number_of_sat_assignments (ϕ: formula) (n: nat) :=
+  exists (αs: assignments),
+    list_of_all_sat_assignments (formula_vars ϕ) ϕ αs /\
+    length αs = n.
+
+Notation "'#sat' ϕ '≃' n" := (number_of_sat_assignments ϕ n) (at level 10).
+
+
 
 
 Lemma dfnn :
@@ -906,20 +921,45 @@ Proof.
       }    
       apply H; assumption.
     } 
-Admitted.        
-    
-Lemma df:
-  forall vs,
-    NoDup vs ->
-    NoDup (all_assignments_on vs).
+Admitted.
+
+
+Lemma test2:
+  forall (X: Type) (xss: list(list X)) (xl: list X),
+    NoDup xss <-> NoDup (map (fun xs => xl ++ xs) xss).
 Proof.
-  induction vs.
-  - intros. constructor; [intros C; easy | constructor ].
-  - intros.
-    apply NoDup_cons_iff in H; destruct H as [NEL ND].
-    feed IHvs; [assumption | ].
-    apply dfnn; [easy | assumption].
-Qed.
+Admitted.
+
+(* TODO: move this *)
+Definition set_with_all_assignments_on (vs: variables) (αs: assignments) :=
+  set_with_all (equiv_assignments vs) (fun _ => True) αs.
+
+(* TODO: check if this def does make sense. *)
+Definition set_with_all_extensions_on (α: assignment) (vs: variables) (αs: assignments) :=
+  set_with_all (equiv_assignments vs) (ext_assignment α) αs.
+  
+
+
+Lemma equiv_sat:
+  forall (ϕ : formula) (α : assignment) (β : assignment),
+    equiv_assignments (leaves ϕ) α β ->
+    forall (b : bool), 
+      ℇ (ϕ) α ≡ b ->
+      ℇ (ϕ) β ≡ b.
+Proof.
+  intros ? ? ? EQ b EV.
+Admitted.
+
+
+Lemma ev_inj:
+  forall (ϕ : formula) (α : assignment) (b1 b2 : bool),
+    ℇ (ϕ) α ≡ b1 ->
+    ℇ (ϕ) α ≡ b2 ->
+    b1 = b2.
+Proof.
+  intros ? ? ? ? EV1 EV2.
+Admitted.
+
 
 Lemma dffil:
   forall (T: Type) (vs: list T) (p: T -> bool),
@@ -929,6 +969,7 @@ Proof.
 Admitted.
 
 
+(* 
 (* TODO: name *)
 Lemma correctness_all_assignments:
   forall (vs: variables),
@@ -942,25 +983,162 @@ Proof.
   { intros. 
     admit. } 
 Admitted.
+*)
 
+
+(* 
+(* TODO: change definition of dupfree??? *)
+Definition list_of_all_assignments (vs: variables) (αs: assignments) :=
+  dupfree_a vs αs /\
+  (forall α, exists β, β el αs /\ equiv_assignments vs α β). 
+*)
+
+(* ext_assignment *)
+
+
+Lemma todo13:
+  forall ϕ b v x α,
+    v nel (leaves ϕ) ->
+    ℇ (ϕ) α ≡ b <-> ℇ (ϕ) (v,x)::α ≡ b.
+Proof. Admitted.
+
+Lemma todo12:
+  forall ϕ v, 
+    v nel leaves (ϕ [v ↦ T]).
+Proof.
+Admitted.
+
+Lemma todo14:
+  forall ϕ v, 
+    v nel leaves (ϕ [v ↦ F]).
+Proof.
+Admitted.
+
+
+
+
+(*** Alg 1: *)
+(** Just make the list of all assignments, and then filter *)
+
+Fixpoint all_assignments_on (vs: variables): assignments :=
+  match vs with
+  | [] => [[]]
+  | v::vs => map (fun α => (v,false)::α) (all_assignments_on vs)
+              ++ map (fun α => (v,true)::α) (all_assignments_on vs)
+  end.
+
+(* TODO: fix name *)
 Lemma size_of_list_of_all_assignments:
   forall (vs: variables),
     length (all_assignments_on vs) = Nat.pow 2 (length vs).
 Proof.
   induction vs; simpl. 
   { reflexivity. }
-  { simpl.
-    rewrite app_length.
-    rewrite !map_length.
-    rewrite <- plus_n_O.
-    rewrite <- IHvs.
-    reflexivity.
-  }
+  { rewrite app_length, !map_length, <- plus_n_O, <- IHvs.
+    reflexivity. } 
 Qed.
+
+(* TODO: fix name *)
+Lemma list_of_all_assignments_dupfree:
+  forall (vs: variables),
+    dupfree_ex vs (all_assignments_on vs). 
+Proof.
+  intros; split.
+  { assert (ND: NoDup vs).
+    { admit. }
+    induction vs.
+    - constructor; [intros C; easy | constructor ].
+    - apply NoDup_cons_iff in ND; destruct ND as [NEL ND].
+      feed IHvs; [assumption | ].
+      apply dfnn; [easy | assumption].
+  } 
+  { intros ? ? EL1 EL2 NEQ EQ.
+    unfold equiv_assignments in EQ.
+    admit (* Todo: ??/10 *).
+  } 
+Admitted.
+
+(* TODO: fix name *)
+Lemma all_assignments_in_this_list:
+  forall (vs: variables), 
+    set_with_all_assignments_on vs (all_assignments_on vs).
+Proof.
+  intros ? α _.
+  admit (* 9/10 *).
+Admitted.
+
+
+Lemma setsallvars:
+  forall (ϕ : formula) (α : assignment),
+    α el all_assignments_on (formula_vars ϕ) ->
+    sets_all_variables ϕ α.
+Proof.
+
+Admitted.
+  
+
+
+(* TODO: comment *)
+Definition all_extensions_on (α: assignment) (vs: variables): assignments :=
+  map (fun β => α ++ β) (all_assignments_on vs).
+  
+Lemma size_of_list_of_all_extensions:
+  forall (α: assignment) (vs: variables),
+    length (all_extensions_on α vs) = Nat.pow 2 (length vs).
+Proof.
+  induction vs; simpl. 
+  { reflexivity. }
+  { unfold all_extensions_on in *; simpl.
+    rewrite !map_length in IHvs.
+    rewrite !map_length, app_length, !map_length, <- plus_n_O, <- IHvs.
+    reflexivity. } 
+Qed.
+
+Lemma list_of_all_extensions_dupfree:
+  forall (α: assignment) (vs: variables),
+    dupfree_ex vs (all_extensions_on α vs). 
+Proof.
+  intros; split.
+  { induction vs.
+    - unfold all_extensions_on; simpl; constructor.
+      intros C; inversion_clear C.
+      constructor; intros C; inversion_clear C.
+    - unfold all_extensions_on; simpl.
+      apply test2, dfnn.
+      + easy.
+      + unfold all_extensions_on in IHvs.
+        apply test2 in IHvs. 
+        assumption.
+  }
+  { intros ? ? EL1 EL2 NEQ EQ.
+    unfold equiv_assignments in EQ; unfold all_extensions_on in *.    
+    (* 9/10 *) admit.
+  } 
+Admitted.
+
+(* TODO: fix name *)
+Lemma all_extensions_in_this_list:
+  forall α (vs: variables), 
+    set_with_all_extensions_on α vs (all_assignments_on vs).
+Proof.
+  intros α ?.
+  admit (* 9/10 *).
+Admitted.
+
+
+(* *)
+Lemma equiv_nodup:
+  forall (vs : variables) (α β : assignment),
+    equiv_assignments vs α β <->
+    equiv_assignments (nodup eq_var_dec vs) α β.
+Proof.
+  intros vs α β; split; intros EQ.
+Admitted.
+
 
 
  (* vs: variables *)
-Definition sat_kek (ϕ: formula) (α: assignment) (SET: sets_all_variables ϕ α): {b: bool | formula_eval ϕ α b}.
+Definition compute_formula (ϕ : formula) (α : assignment) (SET : sets_all_variables ϕ α): {b: bool | formula_eval ϕ α b}.
   induction ϕ.
   - exists false. constructor.
   - exists true. constructor.
@@ -982,40 +1160,58 @@ Defined.
 
 
 
-Definition sat_filter (ϕ: formula) (α: assignment): bool :=
+
+Definition formula_sat_filter (ϕ : formula) (α : assignment): bool :=
   match sets_all_variables_dec ϕ α with 
-  | left _ SETS => let '(exist _ b _) :=  sat_kek ϕ α SETS in b
+  | left _ SETS => let '(exist _ b _) := compute_formula ϕ α SETS in b
   | right _ => false
   end.
 
- 
-  
+
+(* TODO: comment *)
 Definition algorithm1 (ϕ: formula): {n: nat | #sat ϕ ≃ n }.
 Proof.
-  assert(EX: { αs | list_of_sat_assignments (nodup eq_var_dec (leaves ϕ)) ϕ αs }).
-  { exists (filter (fun α => sat_filter ϕ α) (all_assignments_on (nodup eq_var_dec (leaves ϕ)))).
+  set (vars := formula_vars ϕ). 
+  assert(EX: { αs | list_of_all_sat_assignments vars ϕ αs }).
+  { exists (filter (fun α => formula_sat_filter ϕ α) (all_assignments_on vars)).
     repeat split.
-    - apply dffil, df, NoDup_nodup.
-    - intros ? ? EL1 EL2 NEQ EQ.
+    { apply dffil.
+      assert (ND := list_of_all_assignments_dupfree vars).
+      destruct ND.
+      assumption.
+    }
+    { intros ? ? EL1 EL2 NEQ.
       apply filter_In in EL1; destruct EL1 as [EL1 SAT1].
       apply filter_In in EL2; destruct EL2 as [EL2 SAT2].
-      exfalso; apply TODO0 (* 7/10 *).
-    - intros ? EL.
+      apply list_of_all_assignments_dupfree; assumption.
+    } 
+    { intros α EL.
       apply filter_In in EL; destruct EL as [EL TR].
-      unfold sat_filter in *; destruct (sets_all_variables_dec ϕ α) as [D|D]; [ | easy].
-      destruct (sat_kek ϕ α D) as [b EV]; subst b.
+      unfold formula_sat_filter in *; destruct (sets_all_variables_dec ϕ α) as [D|D]; [ | easy].
+      destruct (compute_formula ϕ α D) as [b EV]; subst b.
       assumption.
-    - intros ? SAT.
-      exfalso; apply TODO0 (* 7/10 *).
+    } 
+    { intros α SAT.
+      assert (H := all_assignments_in_this_list vars α).
+      feed H; [constructor | ].
+      destruct H as [β [EQ EL]].
+      exists β; repeat split.
+      - apply equiv_nodup; assumption.
+      - apply filter_In; split; [assumption | ].
+        unfold formula_sat_filter; destruct (sets_all_variables_dec ϕ β) as [S|S].
+        + apply equiv_nodup in EQ.
+          destruct (compute_formula ϕ β S) as [b EV].
+          apply equiv_sat with (β := β) in SAT; [ | assumption].
+          eapply ev_inj; eauto 2.
+        + exfalso; apply S.
+          apply setsallvars; assumption.
+    } 
   }
   destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
-  exfalso; apply TODO0 (* 4/10 *).
 Defined.
 
-
-Compute (proj1_sig (algorithm1 (x1 ∧ (x2 ⊕ x3) ⊕ x1 ∨ x2 ∨ x5))).
-
-  
+(* => 16 *)
+Compute (proj1_sig (algorithm1 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5))).
 
 (*** Alg 2: *)
 (** With transformation ϕ = (ϕ[x ↦ T] ∧ x) ∨ (ϕ[x ↦ F] ∧ ¬x). *)
@@ -1023,6 +1219,8 @@ Compute (proj1_sig (algorithm1 (x1 ∧ (x2 ⊕ x3) ⊕ x1 ∨ x2 ∨ x5))).
 
 
 
+
+(* *)
 Lemma substitute_equiv':
   forall (ϕ ψ1 ψ2: formula) (v: variable),
     (forall (α: assignment) (b: bool),       ℇ (ψ1) α ≡ b ->        ℇ (ψ2) α ≡ b) -> 
@@ -1080,7 +1278,7 @@ Admitted.
 
 
 Lemma formula_size_dec:
-  forall (ϕ: formula),
+  forall (ϕ : formula),
     {formula_size ϕ = 0} + {formula_size ϕ > 0}.
 Proof.
   intros.
@@ -1112,8 +1310,9 @@ Proof.
   }
 Defined.
 
+
 Lemma zero_size_formula_constant_dec:
-  forall (ϕ: formula),
+  forall (ϕ : formula),
     formula_size ϕ = 0 -> 
     {equivalent ϕ T} + {equivalent ϕ F}.
 Proof.
@@ -1157,6 +1356,7 @@ Proof.
   }
 Defined.
 
+
 Lemma count3:
   number_of_sat_assignments T 1.
 Proof. 
@@ -1191,8 +1391,8 @@ Proof.
   - constructor.
   - easy.
   - easy.
-  - inversion_clear H.
-Qed. 
+  - admit.
+Admitted.
 
 Lemma count6:
   forall (ϕ: formula),
@@ -1203,24 +1403,6 @@ Proof.
 Admitted.
 
 
-
-Lemma todo13:
-  forall ϕ b v x α,
-    v nel (leaves ϕ) ->
-    ℇ (ϕ) α ≡ b <-> ℇ (ϕ) (v,x)::α ≡ b.
-Proof. Admitted.
-
-Lemma todo12:
-  forall ϕ v, 
-    v nel leaves (ϕ [v ↦ T]).
-Proof.
-Admitted.
-
-Lemma todo14:
-  forall ϕ v, 
-    v nel leaves (ϕ [v ↦ F]).
-Proof.
-Admitted.
 
 (* 
    The main idea of the algorithm is the following: 
@@ -1250,6 +1432,7 @@ Proof.
     exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2). 
     repeat split.
     { destruct LAA1.
+      (* apply dfnn. *)
       (* Ok *) exfalso; apply TODO1.
     }
     { intros ? ? EL1 EL2 EQ NEQ.
@@ -1267,8 +1450,8 @@ Proof.
       - exfalso; apply TODO3.
       - exfalso; apply TODO4.
     }
-    { intros; apply SW; clear SW.
-      destruct (in_app_or _ _ _ H) as [EL|EL]; clear H.
+    { intros α ELt; apply SW; clear SW.
+      destruct (in_app_or _ _ _ ELt) as [EL|EL]; clear ELt.
       { apply ev_disj_tl, ev_conj_t.
         { apply in_map_iff in EL.
           destruct EL as [mα [EQ1 MEM1]]; subst α.
@@ -1309,7 +1492,7 @@ Proof.
         apply in_app_iff; right.
         apply in_map_iff; exists β; easy.
       }
-    } 
+    }
     { rewrite app_length, map_length, map_length.
       rewrite <- LEN1, <- LEN2; reflexivity.
     } 
@@ -1350,7 +1533,8 @@ Defined.
     } 
    *)
 
-Compute (proj1_sig (algorithm2 ([|V 0|] ⊕[|V 1|] ⊕ [|V 2|] ⊕ [|V 3|] ⊕ [|V 4|]))).
+(* => 32 *)
+Compute (proj1_sig (algorithm2 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6))).
 
 
 (*** Alg 3: *)
@@ -1444,14 +1628,6 @@ Definition certificate1 (ϕ: formula) (ξ: assignment): Prop :=
 
 
 
-(* TODO: name *)
-Definition all_in_set {X: Type} (xs: list X) (p: X -> Prop): Prop :=
-  forall x, x el xs -> p x.
-
-(* TODO: name *)
-Definition set_of_all {X: Type} (xs: list X) (p: X -> Prop) (rel: X -> X -> Prop): Prop :=
-  forall x, p x -> exists y, rel x y /\ y el xs.
-
 
 (*
 Definition certificate_to_assignments (ϕ: formula) (ξ: assignment) (C: certificate1 ϕ ξ):
@@ -1541,10 +1717,6 @@ Definition all_monomials_satisfiable (ψ: dnf) :=
   forall (m: monomial), m el ψ -> monomial_satisfiable m.
 
 
-Definition filter_unsat_monomials
-Section SectionName.
-
-End SectionName.
 Definition comparable {T: Type} (xs ys: list T) :=
   incl xs ys \/ incl ys xs.
 
@@ -1903,8 +2075,6 @@ Proof.
   constructor. *)
 Admitted.
 
-    
-Admitted.
 
 
 (* TODO: Certificates are disjoint *)
@@ -2029,7 +2199,18 @@ Admitted.
 
 
 
+(* Variables are important.
+   
+   Maybe it's a bad deifintion, but consider a formula 
+         x1 ∨ x2 ∨ T.
+   How many sat as. are there? 
+   My answer would be  "On which variables?" 
+    That is, assignments [x1 ↦ F] [x1 ↦ T, x3 ↦ T] 
+    are both sat. ass. even though the first one 
+    doesn't set variable x2, and the second sets 
+    a variable x3.
 
+ *)
 
 
 
