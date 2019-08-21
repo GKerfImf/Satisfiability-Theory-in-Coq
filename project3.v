@@ -343,13 +343,51 @@ Proof.
 Defined.
 
 
-Lemma todo38:
-  forall (X : Type) (xss : list (list X)) (x : X),
-    NoDup xss -> NoDup (map (fun xs => x :: xs) xss).
+Lemma todo39:
+  forall (X : Type) (f : X -> X) (xs : list X),
+    (forall a b, f a = f b -> a = b) -> 
+    NoDup xs <-> NoDup (map f xs).
 Proof.
-  intros ? ? ? ND.
-  admit.
-Admitted.
+  intros ? ? ? INJ; split; intros ND.
+  { induction xs.
+    { assumption. } 
+    { apply NoDup_cons_iff in ND; destruct ND  as [NEL ND].
+      feed IHxs; auto.
+      simpl; apply NoDup_cons_iff; split; [ | auto].
+      intros EL; apply in_map_iff in EL; destruct EL as [a' [EQ NEL2]].
+      apply INJ in EQ; subst; auto.
+    }
+  }
+  { induction xs.
+    { assumption. } 
+    { simpl in ND; apply NoDup_cons_iff in ND; destruct ND  as [NEL ND].
+      feed IHxs; auto.
+      simpl; apply NoDup_cons_iff; split; [ | auto].
+      intros EL; apply NEL; clear NEL.
+      apply in_map_iff; exists a; split; auto.
+    }
+  }
+Defined.
+
+Corollary todo38:
+  forall (X : Type) (xss : list (list X)) (x : X),
+    NoDup xss <->  NoDup (map (fun xs => x :: xs) xss).
+Proof.
+  intros ? ? ?.
+  apply todo39; auto.
+  clear; intros; inversion H; reflexivity.
+Defined.
+
+  
+Corollary todo40:
+  forall (X : Type) (xss : list (list X)) (xsl: list X),
+    NoDup xss <-> NoDup (map (fun xsr => xsl ++ xsr) xss).
+Proof.
+  intros.
+  apply todo39. 
+  clear; intros ? ? EQ.
+  induction xsl; simpl in EQ; [assumption | inversion EQ]; auto.
+Defined.
 
 
 Lemma dfnn_ext :
@@ -373,56 +411,6 @@ Proof.
     }
   }
 Defined.
-
-(* 
-Lemma dfnn :
-  forall (X : Type) (xs : list (list X)) (a b : X), 
-    a <> b -> 
-    NoDup xs ->
-    NoDup (map (fun x => a :: x) xs ++ map (fun x =>  b :: x) xs).
-Proof.
-  intros X ? ? ? NEQ ND.
-  induction xs.
-  - simpl; constructor.
-  - apply NoDup_cons_iff in ND; destruct ND as [NEL ND].
-    feed IHxs; [assumption | ]; simpl.
-    apply NoDup_cons_iff; split.
-    { clear IHxs; intros EL; apply in_app_iff in EL; destruct EL as [EL|EL].
-      { apply in_map_iff in EL; destruct EL as [a_tl [EQ EL]].
-        inversion EQ; subst a0; clear EQ.
-        apply NEL; assumption.
-      } 
-      { destruct EL as [EQ|EL].
-        { inversion EQ; subst; auto. }
-        { apply in_map_iff in EL; destruct EL as [a_tl [EQ EL]].
-          inversion EQ; subst; auto. }
-      }
-    }
-    { apply todo37; simpl.
-      apply NoDup_cons_iff; split.
-      { intros C.
-        apply in_app_or in C; destruct C as [C|C].
-        { apply in_map_iff in C.
-          destruct C as [x [EQ EL]].
-          inversion EQ; subst x; clear EQ.
-          easy.
-        }
-        { apply in_map_iff in C.
-          destruct C as [x [EQ EL]].
-          inversion EQ; subst x; clear EQ.
-          easy.
-        }
-      }
-      apply todo37; assumption.
-    } 
-Defined. *) 
-
-
-Lemma test2:
-  forall (X: Type) (xss: list(list X)) (xl: list X),
-    NoDup xss <-> NoDup (map (fun xs => xl ++ xs) xss).
-Proof.
-Admitted.
 
 Lemma dffil:
   forall (T: Type) (p: T -> bool) (vs: list T),
@@ -2084,13 +2072,13 @@ Section Algorithm3.
           intros C; inversion_clear C.
           constructor; intros C; inversion_clear C.
         - unfold all_extensions_on; simpl.
-          apply test2, dfnn_ext.
+          apply todo40, dfnn_ext.
           + easy.
           + unfold all_extensions_on in IHvs.
-            apply test2 in IHvs. 
+            apply todo40 in IHvs. 
             assumption.
           + unfold all_extensions_on in IHvs.
-            apply test2 in IHvs. 
+            apply todo40 in IHvs. 
             assumption.
       }
       { intros α1 α2 EL1 EL2 NEQ EQ. 
@@ -2551,7 +2539,7 @@ End Algorithm3.
     simpl in EQU.      
   simpl in *.
   constructor. *)
-  Admitted.
+
 
 
 
