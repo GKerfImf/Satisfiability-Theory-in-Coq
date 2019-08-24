@@ -258,6 +258,69 @@ Proof.
   destruct EL as [EQ|EL]; [subst| ]; [left|right]; auto.
 Qed.
 
+Lemma admit_todo60:
+  forall {X : Type} (l l' : list X),
+    NoDup (l ++ l') <-> disj_sets l l' /\ NoDup l /\ NoDup l'.
+Proof.
+  intros ? A B; split; intros ND.
+  { repeat split.
+    - intros ELA ELB. admit (* Ok *).
+    - intros ELB ELA. admit (* Ok *).
+    - admit (* Ok *).
+    - admit (* Ok *).
+      
+  }
+  { destruct ND as [DISJ [NDA NDB]].
+    induction A.
+    { simpl; assumption. }
+    { 
+      simpl. apply NoDup_cons_iff; split. 
+      - intros EL.
+        admit (* Ok *).
+      - apply IHA. admit.  admit.
+    }
+  }
+  (* Todo: 2/10 *)
+Admitted.
+
+Lemma todo59:
+  forall (X : Type) (f : X -> list X) (xs : list X),
+    NoDup xs ->
+    (forall a, a el xs -> NoDup (f a)) ->
+    (forall a b, a el xs -> b el xs -> intrs_sets (f a) (f b) -> a = b) -> 
+    NoDup (flat_map f xs).
+Proof.
+  intros ? ? ? NDL ND INJ.
+  induction xs.
+  { assumption. } 
+  { apply NoDup_cons_iff in NDL; destruct NDL  as [NEL NDL].
+    feed_n 3 IHxs; auto.
+    { intros; apply ND; right; assumption. }
+    { intros; apply INJ; try right; assumption. }
+    simpl; apply admit_todo60; repeat split.
+    { intros EL ELf.
+      apply in_flat_map in ELf; destruct ELf as [b [ELb ELf]].
+      specialize (INJ a b).
+      feed_n 3 INJ.
+      { left; reflexivity. }
+      { right; assumption. }
+      { exists x; split; assumption. }
+      subst b; apply NEL; assumption.
+    }
+    { intros ELf EL.
+      apply in_flat_map in ELf; destruct ELf as [b [ELb ELf]].
+      specialize (INJ a b).
+      feed_n 3 INJ.
+      { left; reflexivity. }
+      { right; assumption. }
+      { exists x; split; assumption. }
+      subst b; apply NEL; assumption.
+    }
+    { apply ND; left; reflexivity. }
+    { assumption. }
+  } 
+Qed.   
+
 
 (** * TODO *)
 (** * Predicates on lists with equivalence *)
@@ -273,15 +336,24 @@ Section Sec1.
   Hypothesis R_refl: forall x, R x x.
   Hypothesis R_sym: forall x y, R x y -> R y x.
 
-  Fixpoint mem_e (x : X) (xs : list X): Prop :=
+  Fixpoint mem_rel (x : X) (xs : list X): Prop :=
     match xs with
     | [] => False
-    | h::tl => (R x h) \/ (mem_e x tl)
+    | h::tl => (R x h) \/ (mem_rel x tl)
     end.
 
+  Instance admit_mem_rel_dec:
+    forall (x : X) (xs : list X), dec (mem_rel x xs).
+  Proof.
+    induction xs.
+    - right; intros C; destruct C.
+    - admit.
+  Admitted.
+    
+  
   Lemma todo36:
     forall (a x : X) (xs : list X),
-      mem_e a xs -> mem_e a (x::xs).
+      mem_rel a xs -> mem_rel a (x::xs).
   Proof.
     intros a ax xs NM.
     induction xs.
@@ -297,7 +369,7 @@ Section Sec1.
   
   Lemma todo24:
     forall (a x : X) (xs : list X),
-      ~ mem_e a (x :: xs) -> ~ mem_e a xs.
+      ~ mem_rel a (x :: xs) -> ~ mem_rel a xs.
   Proof.
     intros a ax xs.
     assert (H: forall (A B: Prop), (A -> B) -> (~ B -> ~ A)).
@@ -307,7 +379,7 @@ Section Sec1.
         
   Lemma todo23:
     forall (a : X) (xs : list X),
-      ~ mem_e a xs -> forall x, x el xs -> ~ R a x. 
+      ~ mem_rel a xs -> forall x, x el xs -> ~ R a x. 
   Proof.
     intros a xs NM x EL NR.
     induction xs.
@@ -319,7 +391,7 @@ Section Sec1.
 
   Lemma todo26:
     forall (a : X) (xs : list X),
-      mem_e a xs -> exists x, x el xs /\ R a x.
+      mem_rel a xs -> exists x, x el xs /\ R a x.
   Proof.
     intros a xs MEM; induction xs.
     { inversion MEM. }
@@ -331,7 +403,7 @@ Section Sec1.
   Defined.
 
   Lemma todo25:
-    forall (x : X) (xs : list X), x el xs -> mem_e x xs.
+    forall (x : X) (xs : list X), x el xs -> mem_rel x xs.
   Proof.
     intros a xs NEL.
     induction xs.
@@ -346,7 +418,7 @@ Section Sec1.
   Fixpoint dupfree_rel_classic (xs : list X): Prop :=
     match xs with
     | [] => True
-    | h::tl => (~ mem_e h tl) /\ (dupfree_rel_classic tl)
+    | h::tl => (~ mem_rel h tl) /\ (dupfree_rel_classic tl)
     end.
   
   Lemma dupfrees_are_equivalent:
@@ -395,6 +467,24 @@ Section Sec1.
       }         
     }
   Qed.
+
+  Fixpoint dupfree_comp (xs : list X): list X :=
+    match xs with
+    | [] => []
+    | x::xs => if decision (mem_rel x xs)
+              then dupfree_comp xs
+              else x :: dupfree_comp xs
+    end.
+
+  Lemma admit_todo7:
+    forall (x : X) (xs : list X),
+      x el xs ->
+      x nel dupfree_comp xs ->
+      exists y, R x y /\ y el dupfree_comp xs. 
+  Proof.
+    intros ? ? EL NEL.
+    
+  Admitted.
   
 End Sec1.
 
@@ -2686,6 +2776,34 @@ Section Algorithm3.
     Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))).
 
     End FormulaToDNF.
+
+    Section Certificates.
+
+      Definition ext_assignment (vs : variables) (α ext_α : assignment) :=
+        forall (v : variable) (b : bool),
+          v el vars_in α ->
+           v / α ↦ b ->
+           v / ext_α ↦ b.
+      (* TODO: add vs -> exists b for α_ext *)
+           
+      Definition certificate1 (ϕ : formula) (ξ : assignment) :=
+        forall ext_ξ, ext_assignment (leaves ϕ) ξ ext_ξ -> ℇ (ϕ) ext_ξ ≡ true.
+
+      Definition certificate0 (ϕ : formula) (ξ : assignment) :=
+        forall ext_ξ, ext_assignment (leaves ϕ) ξ ext_ξ -> ℇ (ϕ) ext_ξ ≡ false.
+
+
+
+      
+
+    End Certificates.
+
+    Section DeleteDuplicatingLiterals.
+
+
+     
+
+    End DeleteDuplicatingLiterals.
     
   (* TODO: name *)
   (* TODO: comment *)
@@ -2765,6 +2883,19 @@ Section Algorithm3.
     Definition comparable {X : Type} (xs ys : list X) :=
       incl xs ys \/ incl ys xs.
 
+    Lemma admit_comparable_refl:
+      forall {X : Type} (xs : list X),
+        comparable xs xs.
+    Proof.
+    Admitted.
+
+    Lemma admit_comparable_sym:
+      forall {X : Type} (xs ys : list X),
+        comparable xs ys ->
+        comparable ys xs .
+    Proof.
+    Admitted.
+    
     Definition all_monomials_disjoint (ψ : dnf) :=
       dupfree_rel comparable ψ.
 
@@ -2772,6 +2903,14 @@ Section Algorithm3.
       {ψ_disj : dnf | equivalent_dnf ψ ψ_disj
                       /\ all_monomials_disjoint ψ_disj}. 
     Proof.
+      exists (dupfree_comp
+           _ comparable admit_comparable_refl admit_comparable_sym ψ).
+      split. 
+      { split; intros DNF.
+        { inversion_clear DNF. admit. admit. }
+        { admit. } 
+      }
+      { admit. }
     Admitted.
 
   End Name2.
@@ -2785,18 +2924,8 @@ Section Algorithm3.
     v / α1 ↦ b /\
     v / α2 ↦ (negb b). *)
 
-    
-    Definition ext_assignment (α ext_α : assignment) :=
-      forall (v : variable) (b : bool),
-        v el vars_in α ->
-        v / α ↦ b ->
-        v / ext_α ↦ b.
-
-    Definition certificate1 (ϕ : formula) (ξ : assignment) :=
-      forall ext_α, ext_assignment ξ ext_α -> ℇ (ϕ) ext_α ≡ true.
-
-    Definition certificate0 (ϕ : formula) (ξ : assignment) :=
-      forall ext_α, ext_assignment ξ ext_α -> ℇ (ϕ) ext_α ≡ false.
+     
+ 
 
     
     Definition sig_monomial_to_certificate1: 
@@ -2810,7 +2939,7 @@ Section Algorithm3.
     
     
     Definition set_with_all_extensions_on (α: assignment) (vs: variables) (αs: assignments) :=
-      set_with_all (equiv_assignments vs) (ext_assignment α) αs.
+      set_with_all (equiv_assignments vs) (ext_assignment vs α) αs.
 
     Definition all_extensions_on (α: assignment) (vs: variables): assignments :=
       map (fun β => α ++ β) (all_assignments_on vs).
@@ -2860,19 +2989,7 @@ Section Algorithm3.
       }        
     Qed.
 
-    (* TODO: fix name *)
-    Lemma admit_all_extensions_in_this_list:
-      forall (vs: variables) (α: assignment), 
-        set_with_all_extensions_on α vs (all_assignments_on vs).
-    Proof.
-      induction vs.
-      { intros α ext_α EXT.
-        exists []; simpl. admit (* Todo: 2/10 *). }
-      { intros α ext_α EXT.
-        simpl in *.
-        admit (* Todo: 8/10 *).
-      }
-    Admitted.
+
 
     
   
@@ -2894,82 +3011,9 @@ Section Algorithm3.
     
     (* TODO: comment *)
     Definition dnf_to_certs (ψ: dnf): assignments := map monomial_to_certificate ψ.
-(*
-    
-    
-    Lemma admit_flat_map_nodup:
-      forall (X : Type) (f : list X -> list (list X)) (xss: list (list X)),
-        NoDup xss ->
-        (forall xs, xs el xss -> NoDup (f xs)) ->
-        NoDup (flat_map f xss).
-    Proof.
-      intros ? ? ? ND1 ND2.
-    Admitted.
 
- *)
     
-    Lemma admit_todo60:
-      forall {X : Type} (l l' : list X),
-        NoDup (l ++ l') <-> disj_sets l l' /\ NoDup l /\ NoDup l'.
-    Proof.
-      intros ? A B; split; intros ND.
-      { repeat split.
-        - intros ELA ELB. admit (* Ok *).
-        - intros ELB ELA. admit (* Ok *).
-        - admit (* Ok *).
-        - admit (* Ok *).
-          
-      }
-      { destruct ND as [DISJ [NDA NDB]].
-        induction A.
-        { simpl; assumption. }
-        { 
-          simpl. apply NoDup_cons_iff; split. 
-          - intros EL.
-            admit (* Ok *).
-          - apply IHA. admit.  admit.
-        }
-      }
-      (* Todo: 2/10 *)
-    Admitted.
-
-    Lemma todo59:
-      forall (X : Type) (f : X -> list X) (xs : list X),
-        (forall a, a el xs -> NoDup (f a)) ->
-        (forall a b, a el xs -> b el xs -> intrs_sets (f a) (f b) -> a = b) -> 
-        NoDup xs ->
-        NoDup (flat_map f xs).
-    Proof.
-      intros ? ? ? ND INJ NDL.
-      induction xs.
-      { assumption. } 
-      { apply NoDup_cons_iff in NDL; destruct NDL  as [NEL NDL].
-        feed_n 3 IHxs; auto.
-        { intros; apply ND; right; assumption. }
-        { intros; apply INJ; try right; assumption. }
-        simpl; apply admit_todo60; repeat split.
-        { intros EL ELf.
-          apply in_flat_map in ELf; destruct ELf as [b [ELb ELf]].
-          specialize (INJ a b).
-          feed_n 3 INJ.
-          { left; reflexivity. }
-          { right; assumption. }
-          { exists x; split; assumption. }
-          subst b; apply NEL; assumption.
-        }
-        { intros ELf EL.
-          apply in_flat_map in ELf; destruct ELf as [b [ELb ELf]].
-          specialize (INJ a b).
-          feed_n 3 INJ.
-          { left; reflexivity. }
-          { right; assumption. }
-          { exists x; split; assumption. }
-          subst b; apply NEL; assumption.
-        }
-        { apply ND; left; reflexivity. }
-        { assumption. }
-      } 
-    Qed.      
+   
 
     Lemma admit_todo61:
       forall (ϕ : formula) (ψ : dnf) (α : assignment),
@@ -2979,54 +3023,82 @@ Section Algorithm3.
     Proof.
       intros ϕ ψ α REP CERT.
     Admitted.
+
+    Lemma admit_todo8:
+      forall (ϕ : formula) (α1 α2 ξ : assignment),
+        α1 el cert_to_assigns ϕ ξ ->
+        α2 el cert_to_assigns ϕ ξ ->
+        α1 <> α2 -> equiv_assignments (leaves ϕ) α1 α2 ->
+        False.
+    Proof.
+      intros ϕ α1 α2 ξ EL1 EL2 NEQ EQU.
+
+    Admitted.
+
+    Lemma admit_todo16:
+      forall (ϕ : formula) (ψ : dnf) (α1 α2 ξ1 ξ2 : assignment),
+        ξ1 <> ξ2 -> 
+        α1 el cert_to_assigns ϕ ξ1 ->
+        α2 el cert_to_assigns ϕ ξ2 ->
+        α1 <> α2 ->
+        equiv_assignments (leaves ϕ) α1 α2 ->
+        False.
+    Proof.
+      intros ? ? ? ? ? ?.
+    Admitted.
+
+
+    Lemma admit_todo45:
+      forall ψ : dnf,
+        all_monomials_disjoint ψ ->
+        forall ξ1 ξ2 : assignment,
+          ξ1 el dnf_to_certs ψ ->
+          ξ2 el dnf_to_certs ψ ->
+          forall ext_ξ1 ext_ξ2 : list (variable * bool),
+            ξ2 ++ ext_ξ2 = ξ1 ++ ext_ξ1 -> ξ1 <> ξ2 -> False.
+    Proof.
+      intros ψ DISJ ξ1 ξ2 CE1 CE2 ext_ξ1 ext_ξ2 EQ NEQ.
+    Admitted.
       
-    Lemma admit_todo33:
+    Lemma todo33:
       forall (ϕ : formula) (ψ : dnf),
         dnf_representation ϕ ψ ->
+        NoDup (dnf_to_certs ψ) -> 
         all_monomials_disjoint ψ -> 
         dupfree (leaves ϕ) (certs_to_assigns ϕ (dnf_to_certs ψ)).
     Proof.
-      intros ϕ ψ REP DISJ; split.
+      intros ϕ ψ ND REP DISJ; split.
       { apply todo59.
+        { assumption. }
         { intros α CERT; eapply admit_todo61; eauto. }
         { intros ξ1 ξ2 CE1 CE2 INT.
           destruct INT as [α [IN1 IN2]].
           apply in_map_iff in IN1; apply in_map_iff in IN2.
-          destruct IN1 as [ext_ξ1 [EQ1 _]], IN2 as [ext_ξ2 [EQ2 _]]; subst α.
-          decide (ξ1 = ξ2) as [EQ|NEQ]; [assumption | exfalso].
-          destruct DISJ as [ND NE].
-          admit (* Follows from disj of monomials. Todo: 7/10 *).
-                                                              
-          
-          
-                    
-          
+          destruct IN1 as [ext_ξ1 [EQ1 _]], IN2 as [ext_ξ2 [EQ2 _]]; subst α; rename EQ2 into EQ.
+          decide (ξ1 = ξ2) as [E|NEQ]; [assumption | exfalso].
+          unfold all_monomials_disjoint in DISJ.
+          destruct DISJ.
+          eapply admit_todo45 with (ξ1 := ξ1); eauto 2.
+          split; eauto. 
         }
-        { 
-          admit (* Assumption: 0/10 *). }
       } 
       { intros α1 α2 EL1 EL2 NEQ EQU.
         apply in_flat_map in EL1; apply in_flat_map in EL2.
         destruct EL1 as [ξ1 [EC1 EL1]], EL2 as [ξ2 [EC2 EL2]].
-        apply in_map_iff in EC1; apply in_map_iff in EC2.
-
-        admit (* Again, disj_monomials -> disj_assignments *).
-        (* destruct EC1 as [m1 [EQ1 EM1]], EC2 as [m2 [EQ2 EM2]]; subst ξ1 ξ2.
-        decide (m1 = m2) as [E|NEQ2].
-        { subst m1; rename m2 into m.
-          apply in_map_iff in EL1; apply in_map_iff in EL2.
-          destruct EL1 as [ex1 [EQ1 EL1]], EL2 as [ex2 [EQ2 EL2]]; subst α1 α2.
-          apply app_disj in NEQ.
-          admit (* Todo: 6/10 *).
-        }
-        { (* NoDup (mons) -> α1 !≡ α2 *)
-          admit (* Todo: 8/10 *).
-        }  *)
+        decide (ξ1 = ξ2) as [E|NEQξ]; [subst ξ2; rename ξ1 into ξ | ].
+        { eapply admit_todo8 with (α1 := α1); eauto 2. }
+        { eapply admit_todo16 with (α1 := α1) (ξ1 := ξ1); eauto 2. }
+      } 
+    Qed.
         
-      }            
+    Lemma admit_todo62:
+      forall (m : monomial) (ξ_ex : list (variable * bool)),
+        monomial_eval m (monomial_to_certificate m ++ ξ_ex) true.
+    Proof.
+      intros m ξ_ex.
     Admitted.
-
-    Lemma admit_todo34:
+      
+    Lemma todo34:
       forall (ϕ : formula) (ψ : dnf),
         dnf_representation ϕ ψ -> 
         set_with_sat_assignments ϕ (certs_to_assigns ϕ (dnf_to_certs ψ)).
@@ -3034,11 +3106,10 @@ Section Algorithm3.
       intros ϕ ψ DNF α EL.
       apply in_flat_map in EL; destruct EL as [ξ [EL1 EL2]].
       apply in_map_iff in EL1; destruct EL1 as [m [MON EL1]].
-      apply in_map_iff in EL2; destruct EL2 as [ξ_ex [EQ EL2]]; subst α.
-      (* nodup in m -> valid cert -> done *)
-      admit (* Todo: 8/10 *).
-    Admitted.
-
+      apply in_map_iff in EL2; destruct EL2 as [ξ_ex [EQ EL2]]; subst α ξ.
+      apply DNF; constructor.
+      exists m; split; auto using admit_todo62.
+    Qed.
 
     Lemma admit_todo35:
       forall (ϕ : formula) (ψ : dnf),
@@ -3050,9 +3121,14 @@ Section Algorithm3.
       inversion_clear SAT.
       destruct H as [m [EL SM]].
 
+      set (cert1 := monomial_to_certificate m).
+
       
-      assert(cert1 := sig_monomial_to_certificate1 _ _ _ DNF EL).
-      feed cert1. exists α; auto.
+      
+      
+      
+
+      
 (*
       destruct cert1 as [ξ CERT].
 
@@ -3097,9 +3173,9 @@ Section Algorithm3.
       set (n_vs := length vars). 
       exists (fold_right Nat.add 0 (map (fun n => Nat.pow 2 n) (map (fun m => n_vs - length m) ψ))).
       exists (certs_to_assigns ϕ (dnf_to_certs ψ)); repeat split.
-      { apply admit_todo33; assumption. }
-      { apply admit_todo33; assumption. }
-      { apply admit_todo34; assumption. }
+      { apply todo33. assumption. admit. admit. }
+      { apply todo33. assumption. admit. admit. }
+      { apply todo34; assumption. }
       { apply admit_todo35; assumption. }
       { clear DNF; induction ψ.
         { reflexivity. }
@@ -3196,3 +3272,17 @@ Admitted. *)
 Definition equiv_a (vs: variables) (αs1 αs2: assignments): Prop :=
   equiv_e (equiv_assignments vs) αs1 αs2. *)
   
+
+ (*   (* TODO: fix name *)
+    Lemma admit_all_extensions_in_this_list:
+      forall (vs: variables) (α: assignment), 
+        set_with_all_extensions_on α vs (all_assignments_on vs).
+    Proof.
+      induction vs.
+      { intros α ext_α EXT.
+        exists []; simpl. admit (* Todo: 2/10 *). }
+      { intros α ext_α EXT.
+        simpl in *.
+        admit (* Todo: 8/10 *).
+      }
+    Admitted. *)
