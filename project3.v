@@ -668,6 +668,16 @@ Admitted.
 
 Definition assignments := list assignment.
 
+(* Variables are important.   
+   Maybe it's a bad deifintion, but consider a formula 
+         x1 ∨ x2 ∨ T.
+   How many sat as. are there? 
+   My answer would be  "On which variables?" 
+    That is, assignments [x1 ↦ F] [x1 ↦ T, x3 ↦ T] 
+    are both sat. ass. even though the first one 
+    doesn't set variable x2, and the second sets 
+    a variable x3.
+ *)
 
 
 (* I don't like "map" here. *)
@@ -912,6 +922,13 @@ Let x6 := [|V 6|].
 Let x7 := [|V 7|].
 
 
+(* As you can see, we have quite weak type for assignment. 
+   Therefore, we have a lot of assignments that are equivalent
+   TODO
+ *)
+
+
+
 (* TODO: def *)
 (* TODO: comment *)
 Reserved Notation "'ℇ' '(' ϕ ')' α ≡ b" (at level 10).
@@ -945,7 +962,7 @@ where "'ℇ' '(' ϕ ')' α ≡ b" := (formula_eval ϕ α b).
 Hint Constructors formula_eval.
 
 (* *)
-Definition sat_assignment (ϕ: formula) (α: assignment) :=
+Definition sat_assignment (ϕ : formula) (α   : assignment) :=
   formula_eval ϕ α true.
 
 Definition unsat_assignment (ϕ: formula) (α: assignment) :=
@@ -1057,38 +1074,7 @@ Section FormulaSizeProperties.
     intros; unfold formula_size; simpl; rewrite app_length; reflexivity.
   Defined.
 
-  Lemma formula_size_dec:
-    forall (ϕ : formula),
-      {formula_size ϕ = 0} + {formula_size ϕ > 0}.
-  Proof.
-    intros.
-    induction ϕ.
-    { left; easy. }
-    { left; easy. }
-    { right; unfold formula_size; simpl; omega. }
-    { destruct IHϕ as [IH|IH]. 
-      - left; assumption.
-      - right; assumption.
-    }
-    { destruct IHϕ1 as [IH1|IH1].
-      - destruct IHϕ2 as [IH2|IH2].
-        + left; unfold formula_size in *; simpl.
-          rewrite app_length, IH1, IH2. easy.
-        + right; unfold formula_size in *; simpl.
-          rewrite app_length, IH1; easy.
-      - right; unfold formula_size in *; simpl.
-        rewrite app_length; omega.
-    }
-    { destruct IHϕ1 as [IH1|IH1].
-      - destruct IHϕ2 as [IH2|IH2].
-        + left; unfold formula_size in *; simpl.
-          rewrite app_length, IH1, IH2. easy.
-        + right; unfold formula_size in *; simpl.
-          rewrite app_length, IH1; easy.
-      - right; unfold formula_size in *; simpl.
-        rewrite app_length; omega.
-    }
-  Defined.
+
   
   Lemma todo17:
     forall (ϕ : formula) (x : variable),
@@ -1581,8 +1567,6 @@ Section PropertiesOfEquivalence.
     apply substitute_equiv'; apply H.
   Defined.
 
-
-
 End PropertiesOfEquivalence.
 
 
@@ -1617,6 +1601,19 @@ Section ListOfAllSatAssignment.
       list_of_all_sat_assignments ϕ αs /\
       length αs = n.
 
+  Theorem admit_todo70:
+    forall (ϕ : formula) (n1 n2 : nat),
+      number_of_sat_assignments ϕ n1 ->
+      number_of_sat_assignments ϕ n2 ->
+      n1 = n2.
+  Proof.
+    intros ? ? ? N1 N2.
+    decide (n1 = n2) as [EQ|NEQ]; [auto|exfalso].
+    destruct N1 as [αs1 [L1 N1]], N2 as [αs2 [L2 N2]].
+    
+    
+    
+  Admitted.
 
 End ListOfAllSatAssignment.
 
@@ -1858,64 +1855,12 @@ End Algorithm1.
 
 Section Algorithm2.
 
-  
- 
-
-
-  Lemma admit_count3:
-    number_of_sat_assignments T 1.
-  Proof. 
-    intros.
-    exists [[]]; repeat split.  
-    - constructor; [easy| constructor]. 
-    - intros ? ? EL1 EL2 NEQ.
-      exfalso; apply NEQ.
-      admit.
-    - intros ? EL.
-      admit.
-    - intros.
-      exists [].
-      simpl; split.
-      intros v EL. easy.
-      left; reflexivity.
-  Admitted.
-
-  Lemma admit_count5:
-    forall (ϕ: formula),
-      formula_size ϕ = 0 -> 
-      equivalent ϕ T -> 
-      number_of_sat_assignments ϕ 1.
-  Proof.
-    intros.
-  Admitted.
-
-  Lemma admit_count4: 
-    number_of_sat_assignments F 0.
-  Proof.
-    intros.
-    exists []; repeat split; intros.
-    - constructor.
-    - easy.
-    - easy.
-    - admit.
-  Admitted.
-
-  Lemma admit_count6:
-    forall (ϕ: formula),
-      formula_size ϕ = 0 -> 
-      equivalent ϕ F -> 
-      number_of_sat_assignments ϕ 0.
-  Proof.
-    intros.
-  Admitted.
-
-  
   Lemma admit_todo57:
     forall (ϕ : formula) (x : variable), incl (leaves (ϕ [x ↦ T])) (leaves ϕ).
   Proof.
     intros ϕ x.
   Admitted.
-    
+  
   Lemma admit_todo58:
     forall (ϕ : formula) (x : variable), incl (leaves (ϕ [x ↦ F])) (leaves ϕ).
   Proof.
@@ -1924,6 +1869,39 @@ Section Algorithm2.
 
 
   Section BaseCase.
+
+    Lemma formula_size_dec:
+      forall (ϕ : formula),
+        {formula_size ϕ = 0} + {formula_size ϕ > 0}.
+    Proof.
+      intros.
+      induction ϕ.
+      { left; easy. }
+      { left; easy. }
+      { right; unfold formula_size; simpl; omega. }
+      { destruct IHϕ as [IH|IH]. 
+        - left; assumption.
+        - right; assumption.
+      }
+      { destruct IHϕ1 as [IH1|IH1].
+        - destruct IHϕ2 as [IH2|IH2].
+          + left; unfold formula_size in *; simpl.
+            rewrite app_length, IH1, IH2. easy.
+          + right; unfold formula_size in *; simpl.
+            rewrite app_length, IH1; easy.
+        - right; unfold formula_size in *; simpl.
+          rewrite app_length; omega.
+      }
+      { destruct IHϕ1 as [IH1|IH1].
+        - destruct IHϕ2 as [IH2|IH2].
+          + left; unfold formula_size in *; simpl.
+            rewrite app_length, IH1, IH2. easy.
+          + right; unfold formula_size in *; simpl.
+            rewrite app_length, IH1; easy.
+        - right; unfold formula_size in *; simpl.
+          rewrite app_length; omega.
+      }
+    Defined.
 
     Lemma zero_size_formula_constant_dec:
       forall (ϕ : formula),
@@ -1969,8 +1947,56 @@ Section Algorithm2.
             apply admit_fo_eq_21; auto; apply fo_eq_11.
       }
     Defined.
-    
 
+    
+    Lemma admit_count3:
+      number_of_sat_assignments T 1.
+    Proof. 
+      intros.
+      exists [[]]; repeat split.  
+      - constructor; [easy| constructor]. 
+      - intros ? ? EL1 EL2 NEQ.
+        exfalso; apply NEQ.
+        admit.
+      - intros ? EL.
+        admit.
+      - intros.
+        exists [].
+        simpl; split.
+        intros v EL. easy.
+        left; reflexivity.
+    Admitted.
+
+    Corollary admit_count5:
+      forall (ϕ : formula),
+        formula_size ϕ = 0 -> 
+        equivalent ϕ T -> 
+        number_of_sat_assignments ϕ 1.
+    Proof.
+      intros.
+    Admitted.
+
+    
+    Lemma admit_count4: 
+      number_of_sat_assignments F 0.
+    Proof.
+      intros.
+      exists []; repeat split; intros.
+      - constructor.
+      - easy.
+      - easy.
+      - admit.
+    Admitted.
+
+    Corollary admit_count6:
+      forall (ϕ : formula),
+        formula_size ϕ = 0 -> 
+        equivalent ϕ F -> 
+        number_of_sat_assignments ϕ 0.
+    Proof.
+      intros.
+    Admitted.
+    
   End BaseCase.
   
   Section Induc.
@@ -1983,7 +2009,7 @@ Section Algorithm2.
     Hypothesis H_leaf : x el leaves ϕ.
 
 
-        
+    
     Lemma admit_switch:
       forall (ϕ : formula) (x : variable),
         equivalent ϕ ([|x|] ∧ ϕ[x ↦ T] ∨ ¬[|x|] ∧ ϕ[x ↦ F]). 
@@ -2077,21 +2103,21 @@ Section Algorithm2.
         }
       }
     Qed.
-  
-  Lemma admit_todo56:
+    
+    Lemma admit_todo56:
       list_of_all_sat_assignments (ϕ [x ↦ T]) αs1 ->
       list_of_all_sat_assignments (ϕ [x ↦ F]) αs2 ->
       set_with_all_sat_assignments ϕ (map (cons (x, true)) αs1 ++ map (cons (x, false)) αs2).
-  Proof.
-    intros LAA1 LAA2.
-    intros α [SETS SAT]; apply admit_switch with (x:=x) in SAT.
-    assert (t: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ T]) α ).
-    { admit. }
-    assert (f: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ F]) α ).
-    { admit. }
+    Proof.
+      intros LAA1 LAA2.
+      intros α [SETS SAT]; apply admit_switch with (x:=x) in SAT.
+      assert (t: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ T]) α ).
+      { admit. }
+      assert (f: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ F]) α ).
+      { admit. }
 
-    
-    
+      
+      
       
       inversion_clear SAT; inversion_clear H.
       
@@ -2103,7 +2129,7 @@ Section Algorithm2.
         destruct LAA1 as [M1 [M2 M3]].
         unfold set_with_all_sat_assignments, set_with_all in M3.
 
-      
+        
         specialize (M3 α); feed M3. split. apply t; auto. auto. 
         destruct M3 as [β [EQ EL]].
         inversion_clear H0. 
@@ -2121,11 +2147,11 @@ Section Algorithm2.
       {
 
 
-            unfold list_of_all_sat_assignments in *.
+        unfold list_of_all_sat_assignments in *.
         destruct LAA2 as [M1 [M2 M3]].
         unfold set_with_all_sat_assignments, set_with_all in M3.
 
-      
+        
         specialize (M3 α); feed M3. split. apply f; auto. auto. 
         destruct M3 as [β [EQ EL]].
 
@@ -2139,36 +2165,36 @@ Section Algorithm2.
 
     Admitted.
     
-      
+    
 
   End Induc.
-    
-    Definition admit_algorithm2:
-      forall (ϕ : formula), {n : nat | number_of_sat_assignments ϕ n}.
-    Proof.
-      apply size_recursion with formula_size; intros ϕ IHϕ. 
-      destruct (formula_size_dec ϕ) as [Zero|Pos].
-      { destruct (zero_size_formula_constant_dec ϕ Zero) as [Tr|Fl].
-        - exists 1; apply admit_count5; assumption.
-        - exists 0; apply admit_count6; assumption. } 
-      { assert (V := get_var _ Pos).
-        destruct V as [x IN]; clear Pos.
-        assert (IH1 := IHϕ (ϕ[x ↦ T])); assert(IH2 := IHϕ (ϕ[x ↦ F])); clear IHϕ.
-        specialize (IH1 (todo3 _ _ IN)); specialize (IH2 (todo5 _ _ IN)).
-        destruct IH1 as [nl EQ1], IH2 as [nr EQ2].
-        exists (nl + nr).
-        destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
-        exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2).
-        split; [split; [ | split] | ].
-        { destruct LAA1 as [ND1 _], LAA2 as [ND2 _]; apply admit_todo54; auto. }
-        { destruct LAA1 as [_ [SAT1 _]], LAA2 as [_ [SAT2 _]]; apply todo55; auto. }
-        { apply admit_todo56; assumption. } 
-        { rewrite app_length, map_length, map_length, <- LEN1, <- LEN2; reflexivity. } 
-      } 
-    Defined.
+  
+  Definition algorithm2:
+    forall (ϕ : formula), {n : nat | number_of_sat_assignments ϕ n}.
+  Proof.
+    apply size_recursion with formula_size; intros ϕ IHϕ. 
+    destruct (formula_size_dec ϕ) as [Zero|Pos].
+    { destruct (zero_size_formula_constant_dec ϕ Zero) as [Tr|Fl].
+      - exists 1; apply admit_count5; assumption.
+      - exists 0; apply admit_count6; assumption. } 
+    { assert (V := get_var _ Pos).
+      destruct V as [x IN]; clear Pos.
+      assert (IH1 := IHϕ (ϕ[x ↦ T])); assert(IH2 := IHϕ (ϕ[x ↦ F])); clear IHϕ.
+      specialize (IH1 (todo3 _ _ IN)); specialize (IH2 (todo5 _ _ IN)).
+      destruct IH1 as [nl EQ1], IH2 as [nr EQ2].
+      exists (nl + nr).
+      destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
+      exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2).
+      split; [split; [ | split] | ].
+      { destruct LAA1 as [ND1 _], LAA2 as [ND2 _]; apply admit_todo54; auto. }
+      { destruct LAA1 as [_ [SAT1 _]], LAA2 as [_ [SAT2 _]]; apply todo55; auto. }
+      { apply admit_todo56; assumption. } 
+      { rewrite app_length, map_length, map_length, <- LEN1, <- LEN2; reflexivity. } 
+    } 
+  Defined.
 
-    (* => 32 *)
-    Compute (proj1_sig (admit_algorithm2 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6))).
+  (* => 32 *)
+  Compute (proj1_sig (algorithm2 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6))).
 
 End Algorithm2.
 
@@ -2195,7 +2221,6 @@ Section Algorithm3.
         (v/α ↦ b) -> literal_eval (Positive v) α b
     | lit_ev_neg: forall (v: variable) (α: assignment) (b: bool),
         (v/α ↦ (negb b)) -> literal_eval (Negative v) α b.
-
   
     
     Lemma admit_todo47:
@@ -2313,25 +2338,6 @@ Section Algorithm3.
     Definition equivalent_dnf (ψ1 ψ2: dnf) :=
       forall (α: assignment) (b: bool),
         dnf_eval ψ1 α b <-> dnf_eval ψ2 α b.  
-
-    
-    (* *)
-    Lemma lemma1:
-      forall (ϕ: formula) (ψ: dnf) (α: assignment),
-        dnf_representation ϕ ψ ->
-        sat_assignment ϕ α <-> exists m, m el ψ /\ monomial_sat_assignment m α. 
-    Proof.
-      intros ? ? ? REP; split; intros EV.
-      { apply REP in EV; clear REP ϕ.
-        inversion_clear EV.
-        eauto.
-      }
-      { apply REP; clear REP ϕ.
-        destruct EV as [m [IN EV]].
-        constructor; eauto.
-      }
-    Qed.
-
 
     
     Lemma admit_tr_eq_rep:
@@ -2779,14 +2785,6 @@ Section Algorithm3.
 
     Section Certificates.
 
-      (* TODO: general form *)
-      Fixpoint list_minus (xs ys : variables): variables :=
-        match xs with
-        | [] => []
-        | h::tl => if decision (h el ys) then list_minus tl ys else h :: list_minus tl ys
-        end.
-
-      
       Definition ext_assignment (vs : variables) (α ext_α : assignment) :=
         incl vs (vars_in ext_α) /\
         forall (v : variable) (b : bool),
@@ -2797,10 +2795,6 @@ Section Algorithm3.
       Definition certificate1 (ϕ : formula) (ξ : assignment) :=
         forall ext_ξ, ext_assignment (leaves ϕ) ξ ext_ξ -> ℇ (ϕ) ext_ξ ≡ true.
 
-      Definition certificate0 (ϕ : formula) (ξ : assignment) :=
-        forall ext_ξ, ext_assignment (leaves ϕ) ξ ext_ξ -> ℇ (ϕ) ext_ξ ≡ false.
-
-      
       (* TODO: comment *)
       Fixpoint monomial_to_certificate1 (m : monomial): assignment :=
         match m with
@@ -2809,32 +2803,77 @@ Section Algorithm3.
         | Negative v :: m' => (v, false) :: monomial_to_certificate1 m'
         end.
 
+      (* Note that [monomial_to_certificate] can fail on an unsatisfiable monomial. *)
+      Example todo29:
+        let var := V 0 in
+        let mon := [Negative var; Positive var] in
+        let α := monomial_to_certificate1 mon in 
+        monomial_unsat_assignment mon α.
+      Proof.
+        intros; unfold monomial_unsat_assignment, mon in *; clear mon.
+        constructor; exists (Positive var); split.
+        - right; left; reflexivity.
+        - simpl; constructor; constructor.
+      Qed.
 
-      (* TODO: name *)
-      (* TODO: comment *)
-      Section Name1.
+      Definition no_confl_literals (mon : monomial) :=
+        forall v, Positive v nel mon \/ Negative v nel mon.
 
-        (* Note that [monomial_to_certificate] can fail on an unsatisfiable monomial. *)
-        Example todo29:
-          let var := V 0 in
-          let mon := [Negative var; Positive var] in
-          let α := monomial_to_certificate1 mon in 
-          monomial_unsat_assignment mon α.
-        Proof.
-          intros; unfold monomial_unsat_assignment, mon in *; clear mon.
-          constructor; exists (Positive var); split.
-          - right; left; reflexivity.
-          - simpl; constructor; constructor.
-        Qed.
+      
+      Lemma admit_todo30:
+        forall (mon : monomial),
+          no_confl_literals mon <-> monomial_satisfiable mon.
+      Proof.
+        intros; split; [intros CONF| intros SAT].
+        { induction mon.
+          { exists []; constructor; intros l EL; destruct EL. }
+          { feed IHmon.
+            { intros v.
+              specialize (CONF v); destruct CONF as [C|C].
+              - left; intros EL; apply C; right; auto.
+              - right; intros EL; apply C; right; auto.
+            }
+            { destruct IHmon as [α SAT].
+              destruct a; [exists ((v, true)::α) | exists ((v, false)::α)]; constructor;
+                intros l EL; destruct EL as [EQ|EL]; subst.
+              constructor; constructor.
+              destruct l as [v1|v1]; constructor.
+
+              admit.  admit.
+              constructor; constructor.
+
+              admit.
+            }
+          }
+        }
+        { admit. }
+      Admitted.      
+
+      Definition admit_dec_mon_sat (mon : monomial):
+        {monomial_satisfiable mon} + {monomial_unsatisfiable mon}.
+      Proof.
         
-        Definition no_confl_literals (mon : monomial) :=
-          ~ exists v, Positive v el mon /\ Negative v el mon.
+        induction mon.
+        { left.
+          exists []; constructor.
+          intros l EL; destruct EL.
+        }
+        { destruct IHmon as [SAT|UNSAT].
+          
+          { admit.
 
-        Lemma admit_todo30:
-          forall (mon : monomial),
-            no_confl_literals mon <-> monomial_satisfiable mon.
-        Proof.
-        Admitted.
+          }
+          { right; intros α.
+            specialize (UNSAT α); constructor.
+            inversion_clear UNSAT; destruct H as [l [EL LIT]].
+            exists l; split; [right| ]; auto.
+          }
+        }
+      Admitted.
+          
+      
+ 
+
         
         Lemma admit_todo31:
           forall (mon : monomial),
@@ -2843,10 +2882,7 @@ Section Algorithm3.
         Proof.
         Admitted.
 
-        Definition admit_dec_mon_sat (m : monomial):
-          {monomial_satisfiable m} + {monomial_unsatisfiable m}.
-        Proof.
-        Admitted.
+     
 
         Definition all_monomials_satisfiable (ψ : dnf) :=
           forall (m : monomial), m el ψ -> monomial_satisfiable m.
@@ -2871,461 +2907,15 @@ Section Algorithm3.
           }
         Admitted.
 
-      End Name1.     
+      
             
       (* TODO: comment *)
       Definition dnf_to_certs (ψ : dnf): assignments :=
         map monomial_to_certificate1 ψ.
-
-
-      
-      
-      Definition all_extensions_on (α : assignment) (vs : variables): assignments :=
-        map (fun β => α ++ β) (all_assignments_on vs). 
-      
-      (* TODO: comment *)
-      Definition cert_to_assigns (ϕ : formula) (ξ : assignment): assignments :=
-        all_extensions_on ξ (list_minus (formula_vars ϕ) (vars_in ξ)).
-      
-      Definition certs_to_assigns (ϕ : formula) (ξs : assignments): assignments :=
-        flat_map (cert_to_assigns ϕ) ξs.
-      
-      (* TODO: comment *)
-      Definition dnf_to_assigns (ϕ : formula) (ψ : dnf): assignments := 
-        certs_to_assigns ϕ (dnf_to_certs ψ).
       
       
     End Certificates.
 
-    Section DeleteDuplicatingLiterals.
-
-
-     
-
-    End DeleteDuplicatingLiterals.
-    
-
-
-  (* TODO: comment *)
-  (* TODO: name *)
-  Section Name2.
-
-    Definition comparable {X : Type} (xs ys : list X) :=
-      incl xs ys \/ incl ys xs.
-
-    Lemma admit_comparable_refl:
-      forall {X : Type} (xs : list X),
-        comparable xs xs.
-    Proof.
-    Admitted.
-
-    Lemma admit_comparable_sym:
-      forall {X : Type} (xs ys : list X),
-        comparable xs ys ->
-        comparable ys xs .
-    Proof.
-    Admitted.
-    
-    Definition all_monomials_disjoint (ψ : dnf) :=
-      dupfree_rel comparable ψ.
-
-    Definition admit_delete_comparable_monomials (ψ : dnf):
-      {ψ_disj : dnf | equivalent_dnf ψ ψ_disj
-                      /\ all_monomials_disjoint ψ_disj}. 
-    Proof.
-      exists (dupfree_comp
-           _ comparable admit_comparable_refl admit_comparable_sym ψ).
-      split. 
-      { split; intros DNF.
-        { inversion_clear DNF. admit. admit. }
-        { admit. } 
-      }
-      { admit. }
-    Admitted.
-
-  End Name2.
-
-  Section Name3.
-
-
-
-     
- 
-
-    
-    Definition sig_monomial_to_certificate1: 
-      forall (ϕ : formula) (ψ : dnf) (m : monomial),
-        dnf_representation ϕ ψ ->
-        m el ψ -> 
-        monomial_satisfiable m -> 
-        { ξ:assignment | certificate1 ϕ ξ }.
-    Proof.
-    Admitted.
-    
-   
-
-    
-(*    Lemma size_of_list_of_all_extensions:
-      forall (α : assignment) (vs : variables),
-        length (all_extensions_on α vs) = Nat.pow 2 (length vs).
-    Proof.
-      induction vs; simpl. 
-      { reflexivity. }
-      { unfold all_extensions_on in *; simpl.
-        rewrite !map_length in IHvs.
-        rewrite !map_length, app_length, !map_length, <- plus_n_O, <- IHvs.
-        reflexivity. } 
-    Qed. *)
-    
-    Lemma list_of_all_extensions_dupfree:
-      forall (α : assignment) (vs : variables),
-        NoDup vs -> 
-        disj_sets (vars_in α) vs ->
-        dupfree vs (all_extensions_on α vs). 
-    Proof.
-      intros ? ? ND DISJ; split. 
-      { clear ND DISJ; induction vs.
-        - unfold all_extensions_on; simpl; constructor.
-          intros C; inversion_clear C.
-          constructor; intros C; inversion_clear C.
-        - unfold all_extensions_on; simpl.
-          apply todo40, dfnn_ext.
-          + easy.
-          + unfold all_extensions_on in IHvs.
-            apply todo40 in IHvs. 
-            assumption.
-          + unfold all_extensions_on in IHvs.
-            apply todo40 in IHvs. 
-            assumption.
-      }
-      { intros α1 α2 EL1 EL2 NEQ EQ. 
-        apply in_map_iff in EL1; apply in_map_iff in EL2.
-        destruct EL1 as [α1_tl [EQ1 EL1]].
-        destruct EL2 as [α2_tl [EQ2 EL2]].
-        rewrite <-EQ1, <- EQ2 in NEQ, EQ; clear EQ1 EQ2 α1 α2. 
-        apply app_disj in NEQ. 
-        apply equiv_assign_disj_update in EQ.
-        { refine (proj2 (list_of_all_assignments_dupfree _ ND) _ _ _ _ NEQ _); assumption. }
-        { apply disj_sets_sym; assumption. }
-      }        
-    Qed.
-
- 
-(*    Definition set_with_all_extensions_on (α: assignment) (vs: variables) (αs: assignments) :=
-      set_with_all (equiv_assignments vs) (ext_assignment vs α) αs.
-*)
-    
-
-
-    Lemma admit_todo61:
-      forall (ϕ : formula) (ψ : dnf) (α : assignment),
-        dnf_representation ϕ ψ ->
-        α el dnf_to_certs ψ ->
-        NoDup (cert_to_assigns ϕ α).
-    Proof.
-      intros ϕ ψ α REP CERT.
-    Admitted.
-
-    Lemma admit_todo8:
-      forall (ϕ : formula) (α1 α2 ξ : assignment),
-        α1 el cert_to_assigns ϕ ξ ->
-        α2 el cert_to_assigns ϕ ξ ->
-        α1 <> α2 ->
-        equiv_assignments (leaves ϕ) α1 α2 ->
-        False.
-    Proof.
-      intros ϕ α1 α2 ξ EL1 EL2 NEQ EQU.
-      apply in_map_iff in EL1; destruct EL1 as [α1_tl [EQ EL1]]; subst α1; rename α1_tl into α1.
-      apply in_map_iff in EL2; destruct EL2 as [α2_tl [EQ EL2]]; subst α2; rename α2_tl into α2.
-      apply app_disj in NEQ.
-      admit (* Todo: 3/10 *).
-    Admitted.
-
-
-    
-      (* TODO: comment *)
-    Definition disjoint_assignments (vs : variables) (α1 α2 : assignment) :=
-      exists (v : variable) (b : bool),
-        v el vs /\
-        v / α1 ↦ b /\
-        v / α2 ↦ (negb b).
-          
-    Lemma admit_todo62:
-      forall ψ m1 m2 ξ1 ξ2,
-        m1 el ψ ->
-        m2 el ψ ->
-        ~ comparable m1 m2 -> 
-        monomial_to_certificate1 m1 = ξ1 ->
-        monomial_to_certificate1 m2 = ξ2 ->
-        disjoint_assignments ([]) ξ1 ξ2.
-    Proof.
-      
-      
-      unfold all_monomials_disjoint. 
-      
-    Admitted.
-      
-    Lemma admit_todo16:
-      forall (ϕ : formula) (ψ : dnf) (α1 α2 ξ1 ξ2 : assignment),
-        ξ1 <> ξ2 -> 
-        α1 el cert_to_assigns ϕ ξ1 ->
-        α2 el cert_to_assigns ϕ ξ2 ->
-        α1 <> α2 ->
-        equiv_assignments (leaves ϕ) α1 α2 ->
-        False.
-    Proof.
-      intros ? ? ? ? ? ? NEQ1 EL1 EL2 NEQ2 EQU. 
-      apply in_map_iff in EL1; destruct EL1 as [α1_tl [EQ EL1]]; subst α1; rename α1_tl into α1.
-      apply in_map_iff in EL2; destruct EL2 as [α2_tl [EQ EL2]]; subst α2; rename α2_tl into α2.
-      
-      
-    Admitted.
-
-
-    Lemma admit_todo45:
-      forall ψ : dnf,
-        all_monomials_disjoint ψ ->
-        forall ξ1 ξ2 : assignment,
-          ξ1 el dnf_to_certs ψ ->
-          ξ2 el dnf_to_certs ψ ->
-          forall ext_ξ1 ext_ξ2 : list (variable * bool),
-            ξ2 ++ ext_ξ2 = ξ1 ++ ext_ξ1 -> ξ1 <> ξ2 -> False.
-    Proof.
-      intros ψ DISJ ξ1 ξ2 CE1 CE2 ext_ξ1 ext_ξ2 EQ NEQ.
-    Admitted.
-      
-    Lemma todo33:
-      forall (ϕ : formula) (ψ : dnf),
-        dnf_representation ϕ ψ ->
-        NoDup (dnf_to_certs ψ) -> 
-        all_monomials_disjoint ψ -> 
-        dupfree (leaves ϕ) (dnf_to_assigns ϕ ψ).
-    Proof.
-      intros ϕ ψ ND REP DISJ; split.
-      { apply todo59.
-        { assumption. }
-        { intros α CERT; eapply admit_todo61; eauto. }
-        { intros ξ1 ξ2 CE1 CE2 INT.
-          destruct INT as [α [IN1 IN2]].
-          apply in_map_iff in IN1; apply in_map_iff in IN2.
-          destruct IN1 as [ext_ξ1 [EQ1 _]], IN2 as [ext_ξ2 [EQ2 _]]; subst α; rename EQ2 into EQ.
-          decide (ξ1 = ξ2) as [E|NEQ]; [assumption | exfalso].
-          unfold all_monomials_disjoint in DISJ.
-          destruct DISJ.
-          eapply admit_todo45 with (ξ1 := ξ1); eauto 2.
-          split; eauto. 
-        }
-      } 
-      { intros α1 α2 EL1 EL2 NEQ EQU.
-        apply in_flat_map in EL1; apply in_flat_map in EL2.
-        destruct EL1 as [ξ1 [EC1 EL1]], EL2 as [ξ2 [EC2 EL2]].
-        decide (ξ1 = ξ2) as [E|NEQξ]; [subst ξ2; rename ξ1 into ξ | ].
-        { eapply admit_todo8 with (α1 := α1); eauto 2. }
-        { apply in_map_iff in EC1; destruct EC1 as [m1 [EQ1 EC1]]. 
-           apply in_map_iff in EC2; destruct EC2 as [m2 [EQ2 EC2]].
-          destruct DISJ as [_ DISJ].
-          assert(F: m1 <> m2). admit.
-          specialize (DISJ _ _ EC1 EC2 F).
-
-          (* ?????? *)
-          
-          admit. 
-        } 
-      } 
-    Admitted.
-        
-    Lemma admit_todo63:
-      forall (m : monomial) (ξ_ex : list (variable * bool)),
-        monomial_eval m (monomial_to_certificate1 m ++ ξ_ex) true.
-    Proof.
-      intros m ξ_ex.
-    Admitted.
-      
-    Lemma todo34:
-      forall (ϕ : formula) (ψ : dnf),
-        dnf_representation ϕ ψ -> 
-        set_with_sat_assignments ϕ (certs_to_assigns ϕ (dnf_to_certs ψ)).
-    Proof.
-      intros ϕ ψ DNF α EL.
-      apply in_flat_map in EL; destruct EL as [ξ [EL1 EL2]].
-      apply in_map_iff in EL1; destruct EL1 as [m [MON EL1]].
-      apply in_map_iff in EL2; destruct EL2 as [ξ_ex [EQ EL2]]; subst α ξ.
-      apply DNF; constructor.
-      exists m; split; auto using admit_todo63.
-    Qed.
-
-    Lemma admit_todo35:
-      forall (ϕ : formula) (ψ : dnf),
-        dnf_representation ϕ ψ -> 
-        set_with_all_sat_assignments ϕ (certs_to_assigns ϕ (dnf_to_certs ψ)).
-    Proof.
-      intros ϕ ψ DNF α [SETS SAT].
-      apply DNF in SAT.
-      inversion_clear SAT.
-      destruct H as [m [EL SM]].
-
-      set (cert1 := monomial_to_certificate1 m).
-
-      
-      
-      
-      
-
-      
-(*
-      destruct cert1 as [ξ CERT].
-
-      assert(EX: exists n, length (list_minus (formula_vars ϕ) (vars_in ξ)) <= n). 
-      { admit. }
-
-      destruct EX as [n B].
-      induction n.
-      exists ξ.
-      admit (* Todo: 9/10 *).
-*)
-      
-      
-      
-      unfold dnf_to_certs, certs_to_assigns.
-      unfold cert_to_assigns.
-      
-      exists α; split.
-      { admit. }
-      {
-        apply in_flat_map. 
-        unfold dnf_to_certs.
- 
-      
-      unfold certs_to_assigns.
-      
-      
-      admit (* Todo: 7/10 *).
-    Admitted.
-
-
-  End Name3.
-
-    
-    Definition admit_algorithm3': 
-      forall (ϕ : formula) (ψ : dnf),
-        dnf_representation ϕ ψ ->  
-        {n: nat | number_of_sat_assignments ϕ n}.
-    Proof.
-      intros ? ? DNF.
-      set (vars := formula_vars ϕ).
-      set (n_vs := length vars). 
-      exists (fold_right Nat.add 0 (map (fun n => Nat.pow 2 n) (map (fun m => n_vs - length m) ψ))).
-      exists (certs_to_assigns ϕ (dnf_to_certs ψ)); repeat split.
-      { apply todo33. assumption. admit. admit. }
-      { apply todo33. assumption. admit. admit. }
-      { apply todo34; assumption. }
-      { apply admit_todo35; assumption. }
-      { clear DNF; induction ψ.
-        { reflexivity. }
-        { simpl; rewrite app_length, IHψ, Nat.add_cancel_r; clear IHψ.
-          unfold cert_to_assigns.
-          admit (* Todo: 4/10 *).
-        }
-      }     
-    Admitted.
-    
-
-  Definition algorithm3 (ϕ : formula): {n : nat | number_of_sat_assignments ϕ n}.
-  Proof.
-    destruct (to_dnf ϕ) as [ψ REP].
-    destruct (admit_delete_unsat_monomials ψ) as [ψ_sm [EQ1 SM]].
-    destruct (admit_delete_comparable_monomials ψ_sm) as [ψ_sm_dm [EQ2 DM]].
-    apply admit_algorithm3' with ψ_sm_dm.
-    apply admit_tr_eq_rep_2 with ψ_sm; [assumption | ].
-    apply admit_tr_eq_rep_2 with ψ; assumption.
-  Defined.
- 
-  Compute (proj1_sig (algorithm3 (x1 ⊕ x2))).
-
 End Algorithm3.
 
 
-
-
-(* As you can see, we have quite weak type for assignment. 
-   Therefore, we have a lot of assignments that are equivalent
-   TODO
- *)
-
-
-
-
-(* Variables are important.
-   
-   Maybe it's a bad deifintion, but consider a formula 
-         x1 ∨ x2 ∨ T.
-   How many sat as. are there? 
-   My answer would be  "On which variables?" 
-    That is, assignments [x1 ↦ F] [x1 ↦ T, x3 ↦ T] 
-    are both sat. ass. even though the first one 
-    doesn't set variable x2, and the second sets 
-    a variable x3.
-
- *)
-
-
-    (*
-Definition certificate_to_assignments (ϕ: formula) (ξ: assignment) (C: certificate1 ϕ ξ):
-  {αs : assignments |
-   dupfree_a (leaves ϕ) αs 
-   /\ all_in_set αs (ext_assignment ξ)
-   /\ set_of_all αs (ext_assignment ξ) (equiv_assignments (leaves ϕ))}.
-Proof.
-Admitted.
-     *)
-
-    (*
-Lemma test1:
-  forall (ϕ: formula) (ξ1 ξ2: assignment),
-    certificate1 ϕ ξ1 ->
-    certificate1 ϕ ξ2 ->
-    disjoint_assignments (leaves ϕ) ξ1 ξ2 ->
-    forall (ext_ξ1 ext_ξ2: assignment),
-      ext_assignment ξ1 ext_ξ1 ->
-      ext_assignment ξ2 ext_ξ2 ->
-      disjoint_assignments (leaves ϕ) ext_ξ1 ext_ξ2.
-Proof.
-Admitted.
-     *)
-
-
-(* TODO: comment *)
-(* Lemma assignments_equiv_dec:
-  forall vs α1 α2, dec (equiv_assignments vs α1 α2).
-Proof.
-Admitted. *)
-
-(* There is a problem that is related to the fact that 
-   two assignments can be equivalent, but not equal. 
-   But we still need to consider a list of assignments and so on.
-   So, I intrtoduce a new predicate for IN. 
- *)
-
-
-
-
-(* Definition incl_a (vs: variables) (αs1 αs2: assignments): Prop :=
-  incl_e (equiv_assignments vs) αs1 αs2.
-
-Definition equiv_a (vs: variables) (αs1 αs2: assignments): Prop :=
-  equiv_e (equiv_assignments vs) αs1 αs2. *)
-  
-
- (*   (* TODO: fix name *)
-    Lemma admit_all_extensions_in_this_list:
-      forall (vs: variables) (α: assignment), 
-        set_with_all_extensions_on α vs (all_assignments_on vs).
-    Proof.
-      induction vs.
-      { intros α ext_α EXT.
-        exists []; simpl. admit (* Todo: 2/10 *). }
-      { intros α ext_α EXT.
-        simpl in *.
-        admit (* Todo: 8/10 *).
-      }
-    Admitted. *)
