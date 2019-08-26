@@ -847,32 +847,30 @@ Section Properties.
     exists b; split; eapply todo53; eauto 2.
   Qed.
  
-  
-
-  (* *)
-  Lemma admit_equiv_nodup:
+  Lemma equiv_nodup:
     forall (vs : variables) (α β : assignment),
       equiv_assignments vs α β <->
       equiv_assignments (nodup eq_var_dec vs) α β.
   Proof.
-    intros vs α β; split; intros EQ.
-  Admitted.
-
- 
-
+    intros vs α β; split; intros EQ v EL.
+    { specialize (EQ v); feed EQ; apply nodup_In in EL; auto. }
+    { specialize (EQ v); feed EQ; auto. apply nodup_In; eauto. } 
+  Qed.
     
-  Lemma admit_todo27:
+  Lemma todo27:
     forall (vs vs_sub : variables) (α1 α2 : assignment),
       incl vs_sub vs ->
       equiv_assignments vs α1 α2 -> 
       equiv_assignments vs_sub α1 α2.
   Proof.
-    intros ϕ x β1 β2 NEQ.
-  Admitted.
-
+    intros ϕ x β1 β2 NEQ EQU v EL.
+    specialize (NEQ v EL).
+    specialize (EQU _ NEQ).
+    destruct EQU as [b [EV1 EV2]].
+    exists b; split; assumption.
+  Qed.  
   
-  
-  Lemma admit_todo41:
+  Lemma todo41:
     forall (α1 α2 : assignment) (vs : list variable) (a : variable) (b : bool),
       a nel vs ->
       equiv_assignments (a::vs) ((a,b)::α1) ((a,b)::α2) ->
@@ -883,11 +881,10 @@ Section Properties.
     { exfalso; auto. }
     { specialize (EQU v); feed EQU; [right;auto| ].
       destruct EQU as [b' [EV1 EV2]].
-      exists b'; split.
-      admit (* Todo: 1/10 *).
-      admit (* Todo: 1/10 *).  
+      exists b'; split; [inversion EV1|inversion EV2]; subst;
+        try assumption; exfalso; auto.
     }
-  Admitted.
+  Qed.
 
   Lemma todo42:
     forall (α1 α2 : assignment) (vs : variables) (a : variable) (b : bool),
@@ -895,14 +892,13 @@ Section Properties.
   Proof.
     intros ? ? ? ? ? EQ.
     specialize (EQ a); feed EQ; [left; auto | ].
-    destruct b; destruct EQ as [b [EV1 EV2]]; destruct b; (inversion_clear EV1; fail || inversion_clear EV2); auto. 
+    destruct b; destruct EQ as [b [EV1 EV2]];
+      destruct b; (inversion_clear EV1; fail || inversion_clear EV2); auto. 
   Qed.
-  
 
 End Properties.
 
-
-(*** Formulas *)
+(** * Formulas *)
 
 (* TODO: comment *)
 Inductive formula :=
@@ -924,17 +920,6 @@ Notation "x '⊕' y" := (xor x y) (at level 41, left associativity).
 
 Definition impl (ϕl ϕr: formula) := ¬ϕl ∧ ϕr. 
 Notation "x '⇒' y" := (impl x y) (at level 41, left associativity).
-
-
-Let x0 := [|V 0|].
-Let x1 := [|V 1|].
-Let x2 := [|V 2|].
-Let x3 := [|V 3|].
-Let x4 := [|V 4|].
-Let x5 := [|V 5|].
-Let x6 := [|V 6|].
-Let x7 := [|V 7|].
-
 
 (* As you can see, we have quite weak type for assignment. 
    Therefore, we have a lot of assignments that are equivalent
@@ -996,7 +981,7 @@ Qed.
 
 Reserved Notation "ϕ [ x ↦ ψ ]" (at level 10).
 
-Fixpoint substitute (ϕ: formula) (v: variable) (ψ: formula): formula :=
+Fixpoint substitute (ϕ : formula) (v : variable) (ψ : formula): formula :=
   match ϕ with
   | T => T
   | F => F
@@ -1006,6 +991,8 @@ Fixpoint substitute (ϕ: formula) (v: variable) (ψ: formula): formula :=
   | ϕl ∨ ϕr => ϕl[v ↦ ψ] ∨ ϕr[v ↦ ψ]
   end
 where "ϕ [ x ↦ f ]" := (substitute ϕ x f).
+
+(* Simpl? *)
 
 (* TODO: *)
 Fixpoint leaves (ϕ: formula): variables :=
@@ -1018,7 +1005,7 @@ Fixpoint leaves (ϕ: formula): variables :=
   end.
 
 (* => [V 0; V 1; V 0; V 1] *)
-Compute (leaves ([|V 0|] ⊕ [|V 1|])). 
+(* Compute (leaves ([|V 0|] ⊕ [|V 1|])). *)
 
 
 (* Definition of the size of a formula. *)
@@ -1027,7 +1014,7 @@ Definition formula_size (ϕ: formula): nat :=
 
 
 (* => 4 *)
-Compute (formula_size ([|V 0|] ⊕ [|V 1|])).
+(* Compute (formula_size ([|V 0|] ⊕ [|V 1|])). *)
 
 (* TODO: comment *)
 Fixpoint number_of_nodes (ϕ: formula): nat :=
@@ -1037,8 +1024,6 @@ Fixpoint number_of_nodes (ϕ: formula): nat :=
   | ϕl ∨ ϕr => 1 + number_of_nodes ϕl + number_of_nodes ϕr
   | ϕl ∧ ϕr => 1 + number_of_nodes ϕl + number_of_nodes ϕr
   end.
-
- 
 
 
 Lemma admit_equiv_sat:
@@ -1056,12 +1041,43 @@ Admitted.
 
 
 Lemma admit_todo13:
-  forall ϕ b v x α,
+  forall (ϕ : formula) (α : assignment) (v : variable) (b a : bool),
     v nel leaves ϕ ->
-    ℇ (ϕ) α ≡ b <-> ℇ (ϕ) (v,x)::α ≡ b.
+    ℇ (ϕ) α ≡ b <-> ℇ (ϕ) (v,a)::α ≡ b.
 Proof.
+  intros ? ? ? ? ? NEL; split; intros EV;
+    generalize dependent a; generalize dependent b;
+      generalize dependent v; generalize dependent α.
+  { induction ϕ; intros.
+    - inversion_clear EV. constructor.
+    - inversion_clear EV. constructor.
+    - constructor. constructor. intros EQ. subst.
+      inversion_clear EV.
+      apply NEL. left. reflexivity.
+      inversion_clear EV. assumption.
+    - simpl in *; inversion_clear EV.
+      specialize (IHϕ _ _ NEL _ H a).
+      constructor; assumption.
+    - admit. 
+    - admit.
+  }
+  { induction ϕ; intros.
+    - inversion_clear EV. constructor.
+    - inversion_clear EV. constructor.
+    - destruct b.
+      inversion EV; subst. inversion H0; subst. exfalso; apply NEL. left; auto. 
+      constructor. assumption.
+      constructor.
 
+      inversion EV; subst.
+      inversion H0; subst. exfalso; apply NEL; left. reflexivity. assumption.
+    - admit.
+    - admit.
+    - admit.
+  }
 Admitted.
+  
+    
 
 
 (* TODO: move to Alg2. *)
@@ -1142,7 +1158,7 @@ Section FormulaSizeProperties.
   
   
   Lemma todo3:
-    forall (ϕ: formula) (x: variable),
+    forall (ϕ : formula) (x : variable),
       x el leaves ϕ -> 
       formula_size (ϕ[x ↦ T]) < formula_size ϕ.
   Proof.
@@ -1181,7 +1197,7 @@ Section FormulaSizeProperties.
   Qed.
 
   Lemma todo5:
-    forall (ϕ: formula) (x: variable),
+    forall (ϕ : formula) (x : variable),
       x el leaves ϕ -> 
       formula_size (ϕ[x ↦ F]) < formula_size ϕ.
   Proof.
@@ -1245,13 +1261,11 @@ Section FormulaSizeProperties.
     + apply singl_in in EL; auto.
   Qed.
 
-
-
 End FormulaSizeProperties.
 
 
-Definition get_var (ϕ: formula) (NE: formula_size ϕ > 0):
-  {v: variable | v el leaves ϕ}.
+Definition get_var (ϕ : formula) (NE : formula_size ϕ > 0):
+  { v : variable | v el leaves ϕ }.
 Proof.
   unfold formula_size in NE.
   destruct (leaves ϕ).
@@ -1261,15 +1275,15 @@ Defined.
 
 
 (* TODO: comment *)
-Definition formula_vars (ϕ: formula) :=
+Definition formula_vars (ϕ : formula) :=
   nodup eq_var_dec (leaves ϕ).
 
-Definition sets_all_variables (ϕ: formula) (α: assignment) := 
+Definition sets_all_variables (ϕ : formula) (α : assignment) := 
   incl (leaves ϕ) (vars_in α).
 
 
 Lemma sets_all_variables_dec:
-  forall (ϕ : formula) (α :assignment),
+  forall (ϕ : formula) (α : assignment),
     dec (sets_all_variables ϕ α).
 Proof.
   intros; unfold sets_all_variables.
@@ -1466,11 +1480,7 @@ Section PropertiesOfEquivalence.
       - apply ev_disj_tr; assumption.
       - apply ev_disj_tl; assumption.
     }
-  Qed.
-
-
-  
-  
+  Qed.  
 
   Lemma formula_equivalence_T_neg_F: 
     equivalent T (¬ F).
@@ -1484,7 +1494,7 @@ Section PropertiesOfEquivalence.
   Qed.
 
 
-  Corollary admit_fo_eq_2:
+  Corollary fo_eq_2:
     forall (ϕ1 ϕ2 : formula),
       equivalent ϕ1 T ->
       equivalent ϕ2 T ->
@@ -1492,9 +1502,11 @@ Section PropertiesOfEquivalence.
   Proof.
     intros.
     apply formula_equivalence_trans with (T ∧ T).
-    apply fo_eq_1; auto.
-    admit.
-  Admitted.
+    apply fo_eq_1; auto. clear H H0.
+    intros ? ?; split; intros EV.
+    - inversion_clear EV;[constructor|inversion_clear H|inversion_clear H].
+    - inversion_clear EV; constructor; constructor.
+  Qed.
 
   (* TODO: More general form? *)
   Corollary fo_eq_3:
@@ -1512,8 +1524,6 @@ Section PropertiesOfEquivalence.
       constructor; apply EQU; constructor.
     }    
   Qed.
-
-
 
   (* TODO: More general form? *)
   Lemma formula_equi_2:
@@ -1534,16 +1544,19 @@ Section PropertiesOfEquivalence.
     }
   Qed.
 
-  Corollary admit_fo_eq_21:
+  Corollary fo_eq_21:
     forall (ϕ1 ϕ2 : formula),
       equivalent ϕ1 F ->
       equivalent ϕ2 F ->
       equivalent (ϕ1 ∨ ϕ2) F.
   Proof.
     intros.
-    admit.
-  Admitted.
-
+    apply formula_equivalence_trans with (F ∨ F).
+    apply fo_eq_11; auto. clear H H0.
+    intros ? ?; split; intros EV.
+    - inversion_clear EV;[constructor|inversion_clear H|inversion_clear H].
+    - inversion_clear EV; constructor; constructor.
+  Qed.
 
 
 
@@ -1563,38 +1576,6 @@ Section PropertiesOfEquivalence.
     
   Admitted.
 
-(*
-  (* *)
-  Lemma substitute_equiv':
-    forall (ϕ ψ1 ψ2 : formula) (v : variable),
-      (forall (α : assignment) (b : bool),        ℇ (ψ1) α ≡ b ->        ℇ (ψ2) α ≡ b) -> 
-      (forall (α : assignment) (b : bool), ℇ (ϕ[v ↦ ψ1]) α ≡ b -> ℇ (ϕ[v ↦ ψ2]) α ≡ b).
-  Proof.
-    induction ϕ; intros ? ? ? EQ ? ?; simpl in *.
-    { intros EV; assumption. }
-    { intros EV; assumption. }
-    { decide (v0 = v); eauto 2; split; eauto 2. }
-    { intros EV.
-      constructor.
-      inversion_clear EV; rename H into EV.
-      apply IHϕ with ψ1; eauto 2. }
-    { intros EV.
-      inversion_clear EV; try(constructor; eauto 2; fail). }
-    { intros EV.
-      inversion_clear EV; try(constructor; eauto 2; fail). }
-  Qed.
-
-  Lemma substitute_equiv:
-    forall (ϕ ψ1 ψ2 : formula) (v : variable),
-      equivalent ψ1 ψ2 ->
-      equivalent (ϕ[v ↦ ψ1]) (ϕ[v ↦ ψ2]).
-  Proof.
-    intros; split.
-    apply substitute_equiv'; apply H.
-    apply substitute_equiv'; apply H.
-  Qed.
-  *)
-    
 End PropertiesOfEquivalence.
 
 
@@ -1639,10 +1620,10 @@ Section ListOfAllSatAssignment.
     decide (n1 = n2) as [EQ|NEQ]; [auto|exfalso].
     destruct N1 as [αs1 [L1 N1]], N2 as [αs2 [L2 N2]].
     
-    
-    
   Admitted.
 
+  Print Assumptions admit_todo70.
+  
 End ListOfAllSatAssignment.
 
 (* TODO: move to section *)
@@ -1700,7 +1681,7 @@ Section Algorithm1.
           apply cons_disj in NEQ.
           specialize (IHvs _ _ EL1 EL2 NEQ).
           apply IHvs; clear IHvs.
-          eapply admit_todo41; eauto 2.
+          eapply todo41; eauto 2.
         }
         { rewrite <-EQ1, <-EQ2 in EQ, NEQ; clear EQ1 EQ2 NEQ.
           apply todo42 in EQ; assumption. }
@@ -1711,7 +1692,7 @@ Section Algorithm1.
           apply cons_disj in NEQ.
           specialize (IHvs _ _ EL1 EL2 NEQ).
           apply IHvs; clear IHvs.
-          eapply admit_todo41; eauto 2.
+          eapply todo41; eauto 2.
         } 
       }
     }
@@ -1757,7 +1738,7 @@ Section Algorithm1.
   Qed.
   
   Definition compute_formula (ϕ : formula) (α : assignment) (SET : sets_all_variables ϕ α):
-    { b: bool | formula_eval ϕ α b}.
+    { b : bool | formula_eval ϕ α b }.
   Proof.
     induction ϕ.
     { exists false. constructor. }
@@ -1833,7 +1814,7 @@ Section Algorithm1.
       { intros α1 α2 EL1 EL2 NEQ EQU.
         apply filter_In in EL1; destruct EL1 as [EL1 SAT1].
         apply filter_In in EL2; destruct EL2 as [EL2 SAT2].
-        apply admit_equiv_nodup in EQU.
+        apply equiv_nodup in EQU.
         apply list_of_all_assignments_dupfree in EQU; try (apply NoDup_nodup || assumption).
       } 
       { intros α EL. 
@@ -1847,10 +1828,10 @@ Section Algorithm1.
         feed H. { eapply incl_trans; eauto; apply incl_nodup. }          
         destruct H as [β [EQ EL]].
         exists β; repeat split.
-        - apply admit_equiv_nodup; assumption.
+        - apply equiv_nodup; assumption.
         - apply filter_In; split; [assumption | ].
           unfold formula_sat_filter; destruct (sets_all_variables_dec ϕ β) as [S|S].
-          + apply admit_equiv_nodup in EQ.
+          + apply equiv_nodup in EQ.
             destruct (compute_formula ϕ β S) as [b EV].
             apply admit_equiv_sat with (β := β) in SAT; [ | assumption].
             eapply formula_eval_inj; eauto 2.
@@ -1864,9 +1845,9 @@ Section Algorithm1.
   Print Assumptions algorithm1.
   
   (* => 16 *)
-  Compute (proj1_sig (algorithm1 (x1))).
+(*  Compute (proj1_sig (algorithm1 (x1))).
   Compute (proj1_sig (algorithm1 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5))).
-  Compute (proj1_sig (algorithm1 (x1 ∨ x2 ∨ x3 ∨ x4 ∨ x5))). 
+  Compute (proj1_sig (algorithm1 (x1 ∨ x2 ∨ x3 ∨ x4 ∨ x5))). *)
 
   
 End Algorithm1.
@@ -1941,27 +1922,39 @@ Section Algorithm2.
       apply todo58 in EL; assumption.
     Qed.
     
-
-
-    Lemma admit_todo73:
+    Lemma todo73:
       forall (ϕ : formula) (v1 v2 : variable),
         v1 <> v2 ->
         v1 el leaves ϕ ->
         v1 el leaves (ϕ [v2 ↦ T]).
     Proof.
       intros ? ? ? NEQ EL.
-      
-    Admitted.
-
+      induction ϕ.
+      all: try(auto; fail).
+      { apply singl_in in EL; subst; simpl. 
+        decide (v2 = v) as [EQ|NEQ2]; [exfalso;subst|left]; auto. } 
+      { simpl in *; apply in_app_iff in EL; destruct EL as [EL|EL];
+          apply in_app_iff; [left|right]; auto. }
+      { simpl in *; apply in_app_iff in EL; destruct EL as [EL|EL];
+          apply in_app_iff; [left|right]; auto. }
+    Qed.
     
-    Lemma admit_todo74:
+    Lemma todo74:
       forall (ϕ : formula) (v1 v2 : variable),
         v1 <> v2 ->
         v1 el leaves ϕ ->
         v1 el leaves (ϕ [v2 ↦ F]).
     Proof.
       intros ? ? ? NEQ EL.
-    Admitted.  
+      induction ϕ.
+      all: try(auto; fail).
+      { apply singl_in in EL; subst; simpl. 
+        decide (v2 = v) as [EQ|NEQ2]; [exfalso;subst|left]; auto. } 
+      { simpl in *; apply in_app_iff in EL; destruct EL as [EL|EL];
+          apply in_app_iff; [left|right]; auto. }
+      { simpl in *; apply in_app_iff in EL; destruct EL as [EL|EL];
+          apply in_app_iff; [left|right]; auto. }
+    Qed.
 
   End SubstitutionProperties.
 
@@ -2025,7 +2018,7 @@ Section Algorithm2.
         feed IHϕ1; auto; feed IHϕ2; auto.
         destruct IHϕ1 as [IH1|IH1].
         - destruct IHϕ2 as [IH2|IH2].
-          + left; apply admit_fo_eq_2; auto.
+          + left; apply fo_eq_2; auto.
           + right; clear IH1.
             apply formula_equi_1, fo_eq_3; auto.
         - right; clear IHϕ2.
@@ -2041,7 +2034,7 @@ Section Algorithm2.
         - destruct IHϕ2 as [IH2|IH2].
           + left; apply formula_equi_3, formula_equi_2; auto. 
           + right.
-            apply admit_fo_eq_21; auto; apply fo_eq_11.
+            apply fo_eq_21; auto; apply fo_eq_11.
       }
     Defined.
 
@@ -2105,8 +2098,6 @@ Section Algorithm2.
   
   Section InductionStep.
 
-
-    
     Lemma admit_switch:
       forall (ϕ : formula) (x : variable) (α : assignment) (b : bool),
         x el vars_in α ->
@@ -2258,7 +2249,7 @@ Section Algorithm2.
           decide (v = x) as [E|NEQ]; [subst | ]. 
           exists true; split; [assumption| constructor].
           specialize (EQ v).
-          feed EQ; [apply admit_todo73;auto| ].
+          feed EQ; [apply todo73;auto| ].
           destruct EQ as [b [EV1 EV2]].
           exists b; split; [ |constructor]; assumption. 
         }
@@ -2275,7 +2266,7 @@ Section Algorithm2.
           decide (v = x) as [E|NEQ]; [subst | ].
           exists false; split; [assumption| constructor].
           specialize (EQ v).
-          feed EQ; [apply admit_todo74;auto| ].
+          feed EQ; [apply todo74;auto| ].
           destruct EQ as [b [EV1 EV2]].
           exists b; split; [ |constructor]; assumption. 
         }
@@ -2430,8 +2421,7 @@ Section kCliques.
                     F
                )
                (range 0 (k-1)))
-          T
-    in
+          T in
 
     (* Pick at most one vertext from each group. *)
     let r2 :=
@@ -2458,51 +2448,38 @@ Section kCliques.
                   T
              )
              (lt_pairs (range 0 (k-1))))
-          T
-    in 
+          T in 
 
+    (* In order to count each clique only once, I introduce an ordering
+       on the vertices. TODO *) 
     let r4 : formula :=
         fold_left
           Conj 
-
-          (
-            
-            
-            (map
-               (fun '(v1,v2) =>
-
-
-                  fold_left
-                    Conj
-                    (map (fun '(k1,k2) =>
-                            ¬ [|V (100 * k1 + v2)|] ∨ ¬ [|V (100 * k2 + v1)|]
-                         ) (lt_pairs (range 0 (k-1))))
+          (map
+             (fun '(v1,v2) =>
+                fold_left
+                  Conj
+                  (map
+                     (fun '(k1,k2) => ¬[|V (100 * k1 + v2)|] ∨ ¬[|V (100 * k2 + v1)|])
+                     (lt_pairs (range 0 (k-1))))
                     T
-               )
-               (lt_pairs Vs))
-              
+             )
+             (lt_pairs Vs))
+          T in
 
-          ) 
-          T
-    in
-
-    
+    (* TODO: *)
     let r5 : formula :=
         fold_left
           Conj 
-          (flat_map (fun '(vl,vg) =>
-                       if Es vl vg
-                       then []
-                       else map (fun '(k1,k2) =>
-                                   ¬ [|V (100*k1 + vl)|] ∨ ¬ [|V (100*k2 + vg)|])
-                                (neq_pairs (range 0 (k-1)))
-                    ) (lt_pairs Vs))
-          T
-    in
-
- 
-
-    
+          (flat_map
+             (fun '(v1,v2) =>
+                if Es v1 v2
+                then []
+                else map
+                       (fun '(k1,k2) =>  ¬[|V (100 * k1 + v1)|] ∨ ¬[|V (100 * k2 + v2)|])
+                       (neq_pairs (range 0 (k-1))))
+             (lt_pairs Vs))
+          T in
     r1 ∧ r2 ∧ r3 ∧ r4 ∧ r5.
 
   Definition counting_k_cliques (k : nat) (g : graph) :=
@@ -2547,7 +2524,7 @@ Section kCliques.
     |}.
 
     
-    Compute ( (transform 3 graph_pentagram)). 
+    (* Compute ( (transform 3 graph_pentagram)). *)
     (* Compute (counting_k_cliques 3 graph_pentagram). *)
   
     
@@ -2563,10 +2540,7 @@ End kCliques.
    *)
 (** With certificates and DNF *)
 Section Algorithm3.
-
-
-
-
+  
   Section Literal.
 
     Inductive literal :=
@@ -2752,8 +2726,7 @@ Section Algorithm3.
     
   End DNF.
 
-
-    Section FormulaToDNF.
+  Section FormulaToDNF.
 
     (* TODO: comment *)
     Fixpoint bottom_negations (ϕ: formula): Prop :=
@@ -2780,363 +2753,363 @@ Section Algorithm3.
       { (* move_negations T := T. *)
         exists T; split.
         - apply formula_equivalence_refl.
-        - constructor.
-      }
-      { (* move_negations [|v|] := [|v|]. *)
-        exists [|v|]; split.
-        - apply formula_equivalence_refl.
-        - constructor.
-      }
-      { destruct ϕ.
-        { (* move_negations (¬F) := T. *)
-          exists T; split. 
-          - apply formula_equivalence_sym;
-              apply formula_equivalence_T_neg_F.
           - constructor.
         }
-        { (* move_negations (¬T) := F. *)
-          exists F; split.
-          - apply formula_equivalence_move_negation;
-              apply formula_equivalence_T_neg_F.
-          - constructor.
-        }
-        { (* move_negations (¬[|v|]) := ¬ [|v|]. *)
-          exists (¬ [|v|]); split.
+        { (* move_negations [|v|] := [|v|]. *)
+          exists [|v|]; split.
           - apply formula_equivalence_refl.
           - constructor.
         }
-        { (* move_negations (¬ ¬ ϕ) := move_negations ϕ. *)
-          assert (IH1 := IH ϕ); feed IH1; [simpl; omega| clear IH].
-          destruct IH1 as [neg_ϕ [EQ LIT]].
-          exists neg_ϕ; split.
-          - apply formula_equivalence_move_negation.
-            apply ->formula_equivalence_negate_both_sides; assumption.
-          - assumption.
+        { destruct ϕ.
+          { (* move_negations (¬F) := T. *)
+            exists T; split. 
+            - apply formula_equivalence_sym;
+                apply formula_equivalence_T_neg_F.
+            - constructor.
+          }
+          { (* move_negations (¬T) := F. *)
+            exists F; split.
+            - apply formula_equivalence_move_negation;
+                apply formula_equivalence_T_neg_F.
+            - constructor.
+          }
+          { (* move_negations (¬[|v|]) := ¬ [|v|]. *)
+            exists (¬ [|v|]); split.
+            - apply formula_equivalence_refl.
+            - constructor.
+          }
+          { (* move_negations (¬ ¬ ϕ) := move_negations ϕ. *)
+            assert (IH1 := IH ϕ); feed IH1; [simpl; omega| clear IH].
+            destruct IH1 as [neg_ϕ [EQ LIT]].
+            exists neg_ϕ; split.
+            - apply formula_equivalence_move_negation.
+              apply ->formula_equivalence_negate_both_sides; assumption.
+            - assumption.
+          }
+          { (* move_negations (¬(ϕl ∧ ϕr)) := move_negations ϕl ∨ move_negations ϕr. *)
+            assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
+            assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| clear IH].
+            destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
+            exists (neg_ϕ1 ∨ neg_ϕ2); split. 
+            - apply formula_equivalence_move_negation, admit_fo_eq_5.
+              apply ->formula_equivalence_negate_both_sides; apply fo_eq_11; assumption.
+            - split; assumption.     
+          }
+          { (* move_negations (¬(ϕl ∨ ϕr)) := move_negations ϕl ∧ move_negations ϕr. *)
+            assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
+            assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| ].
+            destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
+            exists (neg_ϕ1 ∧ neg_ϕ2); split.
+            - apply formula_equivalence_move_negation, admit_fo_eq_6.
+              apply ->formula_equivalence_negate_both_sides; apply fo_eq_1; assumption. 
+            - split; assumption.
+          }   
         }
-        { (* move_negations (¬(ϕl ∧ ϕr)) := move_negations ϕl ∨ move_negations ϕr. *)
-          assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
-          assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| clear IH].
-          destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
-          exists (neg_ϕ1 ∨ neg_ϕ2); split. 
-          - apply formula_equivalence_move_negation, admit_fo_eq_5.
-            apply ->formula_equivalence_negate_both_sides; apply fo_eq_11; assumption.
-          - split; assumption.     
-        }
-        { (* move_negations (¬(ϕl ∨ ϕr)) := move_negations ϕl ∧ move_negations ϕr. *)
-          assert (IH1 := IH (¬ ϕ1)); feed IH1; [simpl; omega| ].
-          assert (IH2 := IH (¬ ϕ2)); feed IH2; [simpl; omega| ].
+        { (* move_negations (ϕl ∧ ϕr) := move_negations ϕl ∧ move_negations ϕr. *)
+          assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
+          assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
           destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
           exists (neg_ϕ1 ∧ neg_ϕ2); split.
-          - apply formula_equivalence_move_negation, admit_fo_eq_6.
-            apply ->formula_equivalence_negate_both_sides; apply fo_eq_1; assumption. 
+          - apply fo_eq_1; assumption. 
           - split; assumption.
-        }   
-      }
-      { (* move_negations (ϕl ∧ ϕr) := move_negations ϕl ∧ move_negations ϕr. *)
-        assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
-        assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
-        destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
-        exists (neg_ϕ1 ∧ neg_ϕ2); split.
-        - apply fo_eq_1; assumption. 
-        - split; assumption.
-      }
-      { (* move_negations (ϕl ∨ ϕr) := move_negations ϕl ∨ move_negations ϕr. *)
-        assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
-        assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
-        destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
-        exists (neg_ϕ1 ∨ neg_ϕ2); split.
-        - apply fo_eq_11; assumption.
-        - split; assumption.
-      }
-    Qed.
-
-    (* Compute (proj1_sig (move_negations (¬ (x0 ∨ x1) ∧ (x2 ∨ x3)))). *)
-
-    Lemma dnf_representation_of_T:
-      dnf_representation T [[]].   
-    Proof.
-      split; intros EV.
-      { inversion_clear EV.
-        constructor; intros.
-        exists []; split.
-        - left; reflexivity.
-        - constructor.
-          intros; inversion_clear H.
-      }
-      { inversion_clear EV.
-        - constructor.
-        - exfalso.
-          specialize (H ([])); feed H; [left; auto | ].
-          inversion_clear H. 
-          destruct H0 as [t  [IN EV]].
-          inversion_clear IN.
-      } 
-    Qed.
-
-    Lemma dnf_representation_of_F:
-      dnf_representation F [].   
-    Proof.
-      split; intros EV.
-      { inversion_clear EV.
-        constructor; intros.
-        inversion_clear H.
-      }
-      { inversion_clear EV.
-        - destruct H as [m [IN EV]]; inversion_clear IN.
-        - constructor.
-      } 
-    Qed.
-
-    Lemma dnf_representation_of_var:
-      forall (v : variable),
-        dnf_representation [|v|] [[Positive v]].   
-    Proof.
-      intros; split; intros EV.
-      { inversion_clear EV.
-        destruct b; constructor.
-        { exists [Positive v]; split.
-          - left; reflexivity.
-          - constructor; intros lit EL.
-            apply singl_in in EL; subst.
-            constructor; assumption.
         }
-        { intros m EL.
-          apply singl_in in EL; subst.
-          constructor; exists (Positive v); split.
-          - left; reflexivity.
-          - constructor; assumption.
+        { (* move_negations (ϕl ∨ ϕr) := move_negations ϕl ∨ move_negations ϕr. *)
+          assert (IH1 := IH ϕ1); feed IH1; [simpl; omega| ].
+          assert (IH2 := IH ϕ2); feed IH2; [simpl; omega| ].
+          destruct IH1 as [neg_ϕ1 [EQ1 BOT1]], IH2 as [neg_ϕ2 [EQ2 BOT2]].
+          exists (neg_ϕ1 ∨ neg_ϕ2); split.
+          - apply fo_eq_11; assumption.
+          - split; assumption.
         }
-      } 
-      { constructor.
-        inversion_clear EV.
-        { destruct H as [m [EL MON]].
-          apply singl_in in EL; subst.
-          inversion_clear MON.
-          specialize (H (Positive v)); feed H; [left; auto | ].
-          inversion_clear H; assumption.
-        }
-        { specialize (H ([Positive v])); feed H; [left; auto | ].
-          inversion_clear H; destruct H0 as [lit [EL F]]. 
-          apply singl_in in EL; subst.
-          inversion_clear F; assumption.
-        }
-      }
-    Qed.
+      Qed.
 
-    Lemma dnf_representation_of_neg_var:
-      forall (v: variable),
-        dnf_representation (¬[|v|]) [[Negative v]].   
-    Proof.
-      intros; split; intros EV.
-      { inversion_clear EV; inversion_clear H.
-        destruct b; constructor.
-        { exists [Negative v]; split.
-          - left; reflexivity.
-          - constructor; intros lit EL.
-            apply singl_in in EL; subst.
-            constructor; assumption.
-        }
-        { intros m EL.
-          apply singl_in in EL; subst.
-          constructor; exists (Negative v); split.
-          - left; reflexivity.
-          - constructor; assumption.
-        }
-      } 
-      { constructor; constructor.
-        inversion_clear EV.
-        { destruct H as [m [EL MON]].
-          apply singl_in in EL; subst.
-          inversion_clear MON.
-          specialize (H (Negative v)); feed H; [left; auto | ].
-          inversion_clear H; assumption.
-        }
-        { specialize (H ([Negative v])); feed H; [left; auto | ].
-          inversion_clear H; destruct H0 as [lit [EL F]]. 
-          apply singl_in in EL; subst.
-          inversion_clear F; assumption.
-        }
-      }
-    Qed.
+      (* Compute (proj1_sig (move_negations (¬ (x0 ∨ x1) ∧ (x2 ∨ x3)))). *)
 
-    Section And.
-      
-      (* TODO: comment *)
-      Definition flat_product {X: Type} (xs ys: list (list X)):list(list X) :=
-        flat_map (fun (y:list X) =>
-                    map (fun (x: list X) => x ++ y) xs) ys.
-
-      (* => [[x0;x1; x4;x5]; [x2;x3; x4;x5]; [x0;x1; x6;x7]; [x2;x3; x6;x7]] *)
-      (* Compute (flat_product ([[x0;x1];[x2;x3]]) ([[x4;x5];[x6;x7]])). *)
-
-      Lemma todo43:
-        forall (X : Type) (xss yss : list (list X)) (xs ys : list X),
-          xs el xss ->
-          ys el yss ->
-          xs ++ ys el flat_product xss yss.
+      Lemma dnf_representation_of_T:
+        dnf_representation T [[]].   
       Proof.
-        intros ? ? ? ? ? EL1 EL2.
-        induction xss.
-        { destruct EL1. }
-        { destruct EL1 as [EQ|EL1]; subst.
-          { clear IHxss; apply in_flat_map.
-            exists ys; split; [ | left]; auto. }
-          { feed IHxss; auto.
-            apply in_flat_map in IHxss; destruct IHxss as [ys' [EL MAP]].
-            apply in_flat_map; exists ys'; split; [ | right]; auto. }
+        split; intros EV.
+        { inversion_clear EV.
+          constructor; intros.
+          exists []; split.
+          - left; reflexivity.
+          - constructor.
+            intros; inversion_clear H.
+        }
+        { inversion_clear EV.
+          - constructor.
+          - exfalso.
+            specialize (H ([])); feed H; [left; auto | ].
+            inversion_clear H. 
+            destruct H0 as [t  [IN EV]].
+            inversion_clear IN.
         } 
       Qed.
 
-      Lemma todo44:
-        forall (X : Type) (xss yss : list (list X)) (zs : list X),
-          zs el flat_product xss yss ->
-          exists xs ys, xs ++ ys = zs /\ xs el xss /\ ys el yss.
+      Lemma dnf_representation_of_F:
+        dnf_representation F [].   
       Proof.
-        intros ? ? ? ? EL.
-        induction xss.
-        { apply in_flat_map in EL; destruct EL as [? [? H]]; destruct H. }
-        { apply in_flat_map in EL; destruct EL as [ys [EL MAP]].
-          destruct MAP as [EQ|MAP].
-          { subst zs; exists a, ys; repeat split; [left;reflexivity| assumption]. }
-          { feed IHxss; [apply in_flat_map; exists ys; split; assumption| ]. 
-            destruct IHxss as [xs' [ys' [EQ [EL1 EL2]]]].
-            exists xs', ys'; repeat split; [ |right| ]; assumption.
+        split; intros EV.
+        { inversion_clear EV.
+          constructor; intros.
+          inversion_clear H.
+        }
+        { inversion_clear EV.
+          - destruct H as [m [IN EV]]; inversion_clear IN.
+          - constructor.
+        } 
+      Qed.
+
+      Lemma dnf_representation_of_var:
+        forall (v : variable),
+          dnf_representation [|v|] [[Positive v]].   
+      Proof.
+        intros; split; intros EV.
+        { inversion_clear EV.
+          destruct b; constructor.
+          { exists [Positive v]; split.
+            - left; reflexivity.
+            - constructor; intros lit EL.
+              apply singl_in in EL; subst.
+              constructor; assumption.
+          }
+          { intros m EL.
+            apply singl_in in EL; subst.
+            constructor; exists (Positive v); split.
+            - left; reflexivity.
+            - constructor; assumption.
+          }
+        } 
+        { constructor.
+          inversion_clear EV.
+          { destruct H as [m [EL MON]].
+            apply singl_in in EL; subst.
+            inversion_clear MON.
+            specialize (H (Positive v)); feed H; [left; auto | ].
+            inversion_clear H; assumption.
+          }
+          { specialize (H ([Positive v])); feed H; [left; auto | ].
+            inversion_clear H; destruct H0 as [lit [EL F]]. 
+            apply singl_in in EL; subst.
+            inversion_clear F; assumption.
           }
         }
       Qed.
 
-      Lemma dnf_representation_of_and:
-        forall (ϕl ϕr: formula) (ψl ψr: dnf),
+      Lemma dnf_representation_of_neg_var:
+        forall (v: variable),
+          dnf_representation (¬[|v|]) [[Negative v]].   
+      Proof.
+        intros; split; intros EV.
+        { inversion_clear EV; inversion_clear H.
+          destruct b; constructor.
+          { exists [Negative v]; split.
+            - left; reflexivity.
+            - constructor; intros lit EL.
+              apply singl_in in EL; subst.
+              constructor; assumption.
+          }
+          { intros m EL.
+            apply singl_in in EL; subst.
+            constructor; exists (Negative v); split.
+            - left; reflexivity.
+            - constructor; assumption.
+          }
+        } 
+        { constructor; constructor.
+          inversion_clear EV.
+          { destruct H as [m [EL MON]].
+            apply singl_in in EL; subst.
+            inversion_clear MON.
+            specialize (H (Negative v)); feed H; [left; auto | ].
+            inversion_clear H; assumption.
+          }
+          { specialize (H ([Negative v])); feed H; [left; auto | ].
+            inversion_clear H; destruct H0 as [lit [EL F]]. 
+            apply singl_in in EL; subst.
+            inversion_clear F; assumption.
+          }
+        }
+      Qed.
+
+      Section And.
+        
+        (* TODO: comment *)
+        Definition flat_product {X: Type} (xs ys: list (list X)):list(list X) :=
+          flat_map (fun (y:list X) =>
+                      map (fun (x: list X) => x ++ y) xs) ys.
+
+        (* => [[x0;x1; x4;x5]; [x2;x3; x4;x5]; [x0;x1; x6;x7]; [x2;x3; x6;x7]] *)
+        (* Compute (flat_product ([[x0;x1];[x2;x3]]) ([[x4;x5];[x6;x7]])). *)
+
+        Lemma todo43:
+          forall (X : Type) (xss yss : list (list X)) (xs ys : list X),
+            xs el xss ->
+            ys el yss ->
+            xs ++ ys el flat_product xss yss.
+        Proof.
+          intros ? ? ? ? ? EL1 EL2.
+          induction xss.
+          { destruct EL1. }
+          { destruct EL1 as [EQ|EL1]; subst.
+            { clear IHxss; apply in_flat_map.
+              exists ys; split; [ | left]; auto. }
+            { feed IHxss; auto.
+              apply in_flat_map in IHxss; destruct IHxss as [ys' [EL MAP]].
+              apply in_flat_map; exists ys'; split; [ | right]; auto. }
+          } 
+        Qed.
+
+        Lemma todo44:
+          forall (X : Type) (xss yss : list (list X)) (zs : list X),
+            zs el flat_product xss yss ->
+            exists xs ys, xs ++ ys = zs /\ xs el xss /\ ys el yss.
+        Proof.
+          intros ? ? ? ? EL.
+          induction xss.
+          { apply in_flat_map in EL; destruct EL as [? [? H]]; destruct H. }
+          { apply in_flat_map in EL; destruct EL as [ys [EL MAP]].
+            destruct MAP as [EQ|MAP].
+            { subst zs; exists a, ys; repeat split; [left;reflexivity| assumption]. }
+            { feed IHxss; [apply in_flat_map; exists ys; split; assumption| ]. 
+              destruct IHxss as [xs' [ys' [EQ [EL1 EL2]]]].
+              exists xs', ys'; repeat split; [ |right| ]; assumption.
+            }
+          }
+        Qed.
+
+        Lemma dnf_representation_of_and:
+          forall (ϕl ϕr: formula) (ψl ψr: dnf),
+            dnf_representation ϕl ψl ->
+            dnf_representation ϕr ψr ->
+            dnf_representation (ϕl ∧ ϕr) (flat_product ψl ψr).
+        Proof.
+          intros ? ? ? ? REP1 REP2; split; intros EV.
+          { inversion_clear EV.
+            { apply REP1 in H; apply REP2 in H0; clear REP1 REP2.
+              inversion_clear H; inversion_clear H0; rename H into MR, H1 into ML.
+              destruct ML as [ml [ELl Ml]], MR as [mr [ELr Mr]].
+              constructor; exists (ml ++ mr); split.
+              - apply todo43; assumption.
+              - inversion_clear Ml; inversion_clear Mr; rename H into Ml, H0 into Mr.
+                constructor; intros lit EL; apply in_app_iff in EL; destruct EL as [EL|EL]; eauto. 
+            }
+            { apply REP1 in H; clear REP1 REP2.
+              inversion_clear H; rename H0 into MF.
+              constructor; intros m EL.
+              apply todo44 in EL; destruct EL as [ml [mr [EQ [EL1 EL2]]]]; subst m.
+              specialize (MF ml EL1); inversion_clear MF; destruct H as [lit [EL EV]].
+              constructor; exists lit; split; [apply in_app_iff;left | ]; auto.
+            }
+            { apply REP2 in H; clear REP1 REP2.
+              inversion_clear H; rename H0 into MF.
+              constructor; intros m EL.
+              apply todo44 in EL; destruct EL as [ml [mr [EQ [EL1 EL2]]]]; subst m.
+              specialize (MF mr EL2); inversion_clear MF; destruct H as [lit [EL EV]].
+              constructor; exists lit; split; [apply in_app_iff;right | ]; auto.
+            }        
+          }
+          { inversion_clear EV.
+            { destruct H as [mon [FL EV]].
+              apply todo44 in FL; destruct FL as [ml [mr [EQ [ELl ELr]]]]; subst.
+              inversion_clear EV; rename H into EL.
+              constructor; [apply REP1|apply REP2]; constructor;
+                [exists ml|exists mr]; split; auto; constructor; intros lit ELlit;
+                  apply EL; apply in_app_iff; [left|right]; auto.
+            }
+            { destruct (admit_todo50 α ψl) as [EVl|[EVl|EVl]], (admit_todo50 α ψr) as [EVr|[EVr|EVr]].
+              all: try(apply ev_conj_fl; apply REP1; constructor; assumption).
+              all: try(apply ev_conj_fr; apply REP2; constructor; assumption).
+              all: exfalso.
+              all: destruct EVl as [ml [ELl Fl]], EVr as [mr [ELr Fr]].
+              all: specialize (H _ (todo43 _ _ _ _ _ ELl ELr)).
+              all: inversion_clear H.
+              all: destruct H0 as [l [EL LIT]].
+              all: apply in_app_iff in EL; destruct EL as [EL|EL].
+              all: try(apply Fl with false; constructor; exists l; split; assumption).
+              all: try(apply Fr with false; constructor; exists l; split; assumption).
+              all: try(inversion_clear Fr; specialize (H _ EL); eauto using todo48). 
+              all: try(inversion_clear Fl; specialize (H _ EL); eauto using todo48). 
+            }
+          }
+        Qed.
+
+      End And.
+      
+      Lemma dnf_representation_of_or:
+        forall (ϕl ϕr : formula) (ψl ψr : dnf),
           dnf_representation ϕl ψl ->
           dnf_representation ϕr ψr ->
-          dnf_representation (ϕl ∧ ϕr) (flat_product ψl ψr).
+          dnf_representation (ϕl ∨ ϕr) (ψl ++ ψr).
       Proof.
         intros ? ? ? ? REP1 REP2; split; intros EV.
         { inversion_clear EV.
           { apply REP1 in H; apply REP2 in H0; clear REP1 REP2.
             inversion_clear H; inversion_clear H0; rename H into MR, H1 into ML.
-            destruct ML as [ml [ELl Ml]], MR as [mr [ELr Mr]].
-            constructor; exists (ml ++ mr); split.
-            - apply todo43; assumption.
-            - inversion_clear Ml; inversion_clear Mr; rename H into Ml, H0 into Mr.
-              constructor; intros lit EL; apply in_app_iff in EL; destruct EL as [EL|EL]; eauto. 
+            constructor; intros mon EL.
+            apply in_app_iff in EL; destruct EL as [EL|EL]; auto.
           }
           { apply REP1 in H; clear REP1 REP2.
-            inversion_clear H; rename H0 into MF.
-            constructor; intros m EL.
-            apply todo44 in EL; destruct EL as [ml [mr [EQ [EL1 EL2]]]]; subst m.
-            specialize (MF ml EL1); inversion_clear MF; destruct H as [lit [EL EV]].
-            constructor; exists lit; split; [apply in_app_iff;left | ]; auto.
-          }
+            inversion_clear H; destruct H0 as [m [EL MON]].
+            constructor; exists m; split.
+            - apply in_or_app; left; assumption.
+            - assumption. }
           { apply REP2 in H; clear REP1 REP2.
-            inversion_clear H; rename H0 into MF.
-            constructor; intros m EL.
-            apply todo44 in EL; destruct EL as [ml [mr [EQ [EL1 EL2]]]]; subst m.
-            specialize (MF mr EL2); inversion_clear MF; destruct H as [lit [EL EV]].
-            constructor; exists lit; split; [apply in_app_iff;right | ]; auto.
-          }        
+            inversion_clear H; destruct H0 as [m [EL MON]].
+            constructor; exists m; split.
+            - apply in_or_app; right; assumption.
+            - assumption. }
         }
         { inversion_clear EV.
-          { destruct H as [mon [FL EV]].
-            apply todo44 in FL; destruct FL as [ml [mr [EQ [ELl ELr]]]]; subst.
-            inversion_clear EV; rename H into EL.
-            constructor; [apply REP1|apply REP2]; constructor;
-              [exists ml|exists mr]; split; auto; constructor; intros lit ELlit;
-                apply EL; apply in_app_iff; [left|right]; auto.
-          }
-          { destruct (admit_todo50 α ψl) as [EVl|[EVl|EVl]], (admit_todo50 α ψr) as [EVr|[EVr|EVr]].
-            all: try(apply ev_conj_fl; apply REP1; constructor; assumption).
-            all: try(apply ev_conj_fr; apply REP2; constructor; assumption).
-            all: exfalso.
-            all: destruct EVl as [ml [ELl Fl]], EVr as [mr [ELr Fr]].
-            all: specialize (H _ (todo43 _ _ _ _ _ ELl ELr)).
-            all: inversion_clear H.
-            all: destruct H0 as [l [EL LIT]].
-            all: apply in_app_iff in EL; destruct EL as [EL|EL].
-            all: try(apply Fl with false; constructor; exists l; split; assumption).
-            all: try(apply Fr with false; constructor; exists l; split; assumption).
-            all: try(inversion_clear Fr; specialize (H _ EL); eauto using todo48). 
-            all: try(inversion_clear Fl; specialize (H _ EL); eauto using todo48). 
-          }
+          destruct H as [m [EL MON]]; apply in_app_iff in EL; destruct EL as [EL|EL];
+            [apply ev_disj_tl; apply REP1 | apply ev_disj_tr; apply REP2];
+            constructor; exists m; split; auto.
+          constructor; (apply REP1 || apply REP2);
+            constructor; intros m EL;
+              apply H; apply in_app_iff; [left|right]; assumption.
+        }     
+      Qed.
+
+      Definition to_dnf ( ϕ : formula): { ψ : dnf | dnf_representation ϕ ψ }.
+      Proof.
+        assert (NEG := move_negations ϕ).
+        destruct NEG as [neg_ϕ [EQ NEG]]. 
+        apply todo15 with neg_ϕ; [apply formula_equivalence_sym; auto| clear EQ ϕ].
+        induction neg_ϕ.
+        { (* to_dnf F := []. *)
+          exists []; apply dnf_representation_of_F.
+        }
+        { (* to_dnf T := [[]]. *)
+          exists [[]]; apply dnf_representation_of_T.
+        }
+        { (* to_dnf [|v|] := [[Positive v]]. *)
+          exists [[Positive v]]; apply dnf_representation_of_var.
+        }
+        { (* to_dnf (¬[|v|]) := [[Negative v]]. *)
+          assert (LIT : {v | neg_ϕ = [|v|]}).
+          { destruct neg_ϕ; try (exfalso; auto; fail).
+            exists v; reflexivity. }
+          destruct LIT as [v EQ]; subst neg_ϕ.
+          exists [[Negative v]].
+          apply dnf_representation_of_neg_var.
+        } 
+        { (* to_dnf (ϕl ∧ ϕr) := (to_dnf ϕl) × (to_dnf ϕr). *)
+          destruct NEG as [NEG1 NEG2].
+          feed IHneg_ϕ1; auto; clear NEG1.
+          feed IHneg_ϕ2; auto; clear NEG2.
+          destruct IHneg_ϕ1 as [ψ1 REP1], IHneg_ϕ2 as [ψ2 REP2].
+          exists (flat_product ψ1 ψ2); apply dnf_representation_of_and; auto.
+        }
+        { (* to_dnf (ϕl ∨ ϕr) := (to_dnf ϕl) ++ (to_dnf ϕr). *)
+          destruct NEG as [NEG1 NEG2].
+          feed IHneg_ϕ1; auto; clear NEG1.
+          feed IHneg_ϕ2; auto; clear NEG2.
+          destruct IHneg_ϕ1 as [ψ1 REP1], IHneg_ϕ2 as [ψ2 REP2].
+          exists (ψ1 ++ ψ2); apply dnf_representation_of_or; auto.
         }
       Qed.
 
-    End And.
-    
-    Lemma dnf_representation_of_or:
-      forall (ϕl ϕr : formula) (ψl ψr : dnf),
-        dnf_representation ϕl ψl ->
-        dnf_representation ϕr ψr ->
-        dnf_representation (ϕl ∨ ϕr) (ψl ++ ψr).
-    Proof.
-      intros ? ? ? ? REP1 REP2; split; intros EV.
-      { inversion_clear EV.
-        { apply REP1 in H; apply REP2 in H0; clear REP1 REP2.
-          inversion_clear H; inversion_clear H0; rename H into MR, H1 into ML.
-          constructor; intros mon EL.
-          apply in_app_iff in EL; destruct EL as [EL|EL]; auto.
-        }
-        { apply REP1 in H; clear REP1 REP2.
-          inversion_clear H; destruct H0 as [m [EL MON]].
-          constructor; exists m; split.
-          - apply in_or_app; left; assumption.
-          - assumption. }
-        { apply REP2 in H; clear REP1 REP2.
-          inversion_clear H; destruct H0 as [m [EL MON]].
-          constructor; exists m; split.
-          - apply in_or_app; right; assumption.
-          - assumption. }
-      }
-      { inversion_clear EV.
-        destruct H as [m [EL MON]]; apply in_app_iff in EL; destruct EL as [EL|EL];
-          [apply ev_disj_tl; apply REP1 | apply ev_disj_tr; apply REP2];
-          constructor; exists m; split; auto.
-        constructor; (apply REP1 || apply REP2);
-          constructor; intros m EL;
-            apply H; apply in_app_iff; [left|right]; assumption.
-      }     
-    Qed.
-
-    Definition to_dnf ( ϕ : formula): { ψ : dnf | dnf_representation ϕ ψ }.
-    Proof.
-      assert (NEG := move_negations ϕ).
-      destruct NEG as [neg_ϕ [EQ NEG]]. 
-      apply todo15 with neg_ϕ; [apply formula_equivalence_sym; auto| clear EQ ϕ].
-      induction neg_ϕ.
-      { (* to_dnf F := []. *)
-        exists []; apply dnf_representation_of_F.
-      }
-      { (* to_dnf T := [[]]. *)
-        exists [[]]; apply dnf_representation_of_T.
-      }
-      { (* to_dnf [|v|] := [[Positive v]]. *)
-        exists [[Positive v]]; apply dnf_representation_of_var.
-      }
-      { (* to_dnf (¬[|v|]) := [[Negative v]]. *)
-        assert (LIT : {v | neg_ϕ = [|v|]}).
-        { destruct neg_ϕ; try (exfalso; auto; fail).
-          exists v; reflexivity. }
-        destruct LIT as [v EQ]; subst neg_ϕ.
-        exists [[Negative v]].
-        apply dnf_representation_of_neg_var.
-      } 
-      { (* to_dnf (ϕl ∧ ϕr) := (to_dnf ϕl) × (to_dnf ϕr). *)
-        destruct NEG as [NEG1 NEG2].
-        feed IHneg_ϕ1; auto; clear NEG1.
-        feed IHneg_ϕ2; auto; clear NEG2.
-        destruct IHneg_ϕ1 as [ψ1 REP1], IHneg_ϕ2 as [ψ2 REP2].
-        exists (flat_product ψ1 ψ2); apply dnf_representation_of_and; auto.
-      }
-      { (* to_dnf (ϕl ∨ ϕr) := (to_dnf ϕl) ++ (to_dnf ϕr). *)
-        destruct NEG as [NEG1 NEG2].
-        feed IHneg_ϕ1; auto; clear NEG1.
-        feed IHneg_ϕ2; auto; clear NEG2.
-        destruct IHneg_ϕ1 as [ψ1 REP1], IHneg_ϕ2 as [ψ2 REP2].
-        exists (ψ1 ++ ψ2); apply dnf_representation_of_or; auto.
-      }
-    Qed.
-
-    (* Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))). *)
+      (* Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))). *)
 
     End FormulaToDNF.
 
@@ -3203,7 +3176,10 @@ Section Algorithm3.
           admit.
         }
       Admitted.
-          
+
+      Print Assumptions admit_contains_extensions.
+
+      (* TODO: fix *)
       Lemma size_of_list_of_all_extensions:
         forall (ξ : assignment) (vs : variables),
           length (all_extensions_on ξ vs) = Nat.pow 2 (length vs).
@@ -3215,106 +3191,6 @@ Section Algorithm3.
           rewrite !map_length, app_length, !map_length, <- plus_n_O, <- IHvs.
           reflexivity. } 
       Qed. 
-
-
-      (* TODO: del everything below *)
-      Definition no_confl_literals (mon : monomial) :=
-        forall v, Positive v nel mon \/ Negative v nel mon.
-
-      
-      Lemma admit_todo30:
-        forall (mon : monomial),
-          no_confl_literals mon <-> monomial_satisfiable mon.
-      Proof.
-        intros; split; [intros CONF| intros SAT].
-        { induction mon.
-          { exists []; constructor; intros l EL; destruct EL. }
-          { feed IHmon.
-            { intros v.
-              specialize (CONF v); destruct CONF as [C|C].
-              - left; intros EL; apply C; right; auto.
-              - right; intros EL; apply C; right; auto.
-            }
-            { destruct IHmon as [α SAT].
-              destruct a; [exists ((v, true)::α) | exists ((v, false)::α)]; constructor;
-                intros l EL; destruct EL as [EQ|EL]; subst.
-              constructor; constructor.
-              destruct l as [v1|v1]; constructor.
-
-              admit.  admit.
-              constructor; constructor.
-
-              admit.
-            }
-          }
-        }
-        { admit. }
-      Admitted.      
-
-      Definition admit_dec_mon_sat (mon : monomial):
-        {monomial_satisfiable mon} + {monomial_unsatisfiable mon}.
-      Proof.
-        
-        induction mon.
-        { left.
-          exists []; constructor.
-          intros l EL; destruct EL.
-        }
-        { destruct IHmon as [SAT|UNSAT].
-          
-          { admit.
-
-          }
-          { right; intros α.
-            specialize (UNSAT α); constructor.
-            inversion_clear UNSAT; destruct H as [l [EL LIT]].
-            exists l; split; [right| ]; auto.
-          }
-        }
-      Admitted.
-          
-      
- 
-
-        
-        Lemma admit_todo31:
-          forall (mon : monomial),
-            monomial_satisfiable mon <->
-            monomial_sat_assignment mon (monomial_to_certificate1 mon).
-        Proof.
-        Admitted.
-
-     
-
-        Definition all_monomials_satisfiable (ψ : dnf) :=
-          forall (m : monomial), m el ψ -> monomial_satisfiable m.
-        
-        Definition admit_delete_unsat_monomials (ψ : dnf):
-          {ψ_sm : dnf | equivalent_dnf ψ ψ_sm
-                        /\ all_monomials_satisfiable ψ_sm}.
-        Proof.
-          exists (filter (fun m => if admit_dec_mon_sat m then true else false) ψ); split.
-          { split; intros EV.
-            - inversion_clear EV.
-              + destruct H as [m [EL SAT]].
-                constructor; exists m; split. admit. admit.
-              + constructor; intros ? EV; exfalso.
-                apply filter_In in EV; destruct EV as [EL EV].
-                specialize (H _ EL).
-                admit.
-            - admit.
-          } 
-          { intros ? EL.
-            admit.
-          }
-        Admitted.
-
-      
-            
-      (* TODO: comment *)
-      Definition dnf_to_certs (ψ : dnf): assignments :=
-        map monomial_to_certificate1 ψ.
-      
       
     End Certificates.
 
