@@ -70,13 +70,6 @@ Defined.
 
 (** Qed. ~> Defined. *)
 
-Lemma singl_in {X: Type} (x y: X):
-  x el [y] -> x = y.
-Proof.
-  intros.
-  inversion_clear H; [subst; reflexivity | inversion_clear  H0].
-Qed.
-
 Lemma app_length: forall {A: Type} (l l': list A), length (l++l') = length l + length l'.
 Proof.
   induction l; simpl; auto.
@@ -93,7 +86,14 @@ Proof.
   split.
   + inversion_clear 1. now split.
   + now constructor.
-Defined.
+Defined. (* Todo: Qed? *)
+
+Lemma singl_in {X: Type} (x y: X):
+  x el [y] -> x = y.
+Proof.
+  intros.
+  inversion_clear H; [subst; reflexivity | inversion_clear  H0].
+Defined. (* Todo: Qed? *)
 
 Lemma in_cons_or_dec:
   forall (A : Type) (decA: eq_dec A) (l : list A) (a b : A),
@@ -112,7 +112,7 @@ Proof.
       feed IHl; [right;assumption| ].
       destruct IHl; right; assumption. 
   }
-Defined.
+Defined. (* Todo: Qed? *)
 
 Lemma in_app_or_dec:
   forall (A : Type) (decA: eq_dec A) (l l' : list A) (a : A),
@@ -129,7 +129,7 @@ Proof.
       + left; right; assumption.
       + right; assumption.
   }
-Defined.
+Defined. (* Todo: Qed? *)
 
 Lemma NoDup_nodup {A : Type} (decA: eq_dec A) l: NoDup (nodup decA l).
 Proof.
@@ -138,7 +138,7 @@ Proof.
   - destruct (in_dec decA a l'); simpl.
     * assumption.
     * constructor; [ now rewrite nodup_In | assumption].
-Defined.
+Defined. (* Todo: Qed? *)
 
 (** * ??? *)
 
@@ -162,13 +162,15 @@ Proof.
       assert (EL: x el xs1 ++ xs2).
       { apply in_or_app; right; assumption. }
       eauto.
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 Instance list_in_dec {T: Type} (x: T) (xs: list T): 
   eq_dec T -> dec (x el xs).
 Proof.
   intros D; apply in_dec; exact D.
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 Instance inclusion_dec {T: Type} (xs1 xs2: list T):
   eq_dec T -> dec (incl xs1 xs2).
@@ -195,7 +197,8 @@ Proof.
       right; assumption.
     }
   }
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 
 Definition intrs_sets {X : Type} (A B : list X) :=
@@ -365,7 +368,8 @@ Section Sec1.
       left; assumption.
       right; right; assumption.
     }
-  Defined.
+  Defined. (* Todo: Qed? *)
+
   
   Lemma todo24:
     forall (a x : X) (xs : list X),
@@ -375,7 +379,8 @@ Section Sec1.
     assert (H: forall (A B: Prop), (A -> B) -> (~ B -> ~ A)).
     { clear; intros ? ? f nb a; auto. }
     apply H; apply todo36.
-  Defined.
+Defined. (* Todo: Qed? *)
+
         
   Lemma todo23:
     forall (a : X) (xs : list X),
@@ -387,7 +392,8 @@ Section Sec1.
     { destruct EL as [EQ|EL]; subst.
       apply NM; left; assumption.
       apply todo24 in NM; feed IHxs; auto. }
-  Qed.
+Defined. (* Todo: Qed? *)
+
 
   Lemma todo26:
     forall (a : X) (xs : list X),
@@ -400,7 +406,8 @@ Section Sec1.
       - feed IHxs; auto. destruct IHxs as [x [EL Ra]].
         exists x; split; [right | ]; auto.
     } 
-  Defined.
+Defined. (* Todo: Qed? *)
+
 
   Lemma todo25:
     forall (x : X) (xs : list X), x el xs -> mem_rel x xs.
@@ -512,7 +519,8 @@ Proof.
     - apply List.in_or_app; right; assumption.
     - apply List.in_or_app; left; assumption.
   } 
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 
 Lemma todo39:
@@ -539,7 +547,8 @@ Proof.
       apply in_map_iff; exists a; split; auto.
     }
   }
-Defined.
+Defined. (* Todo: Qed? *)
+
  
 Corollary todo38:
   forall (X : Type) (xss : list (list X)) (x : X),
@@ -548,7 +557,8 @@ Proof.
   intros ? ? ?.
   apply todo39; auto.
   clear; intros; inversion H; reflexivity.
-Defined.
+Defined. (* Todo: Qed? *)
+
 
   
 Corollary todo40:
@@ -559,7 +569,8 @@ Proof.
   apply todo39. 
   clear; intros ? ? EQ.
   induction xsl; simpl in EQ; [assumption | inversion EQ]; auto.
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 
 Lemma dfnn_ext :
@@ -582,7 +593,8 @@ Proof.
         inversion EQ; subst a0; clear EQ; auto.
     }
   }
-Defined.
+Defined. (* Todo: Qed? *)
+
 
 Lemma dffil:
   forall (T: Type) (p: T -> bool) (vs: list T),
@@ -601,7 +613,8 @@ Proof.
     }
     { apply IHvs; assumption. }
   }
-Defined.
+Defined. (* Todo: Qed? *)
+
     
     
 Lemma app_disj :
@@ -642,7 +655,8 @@ Proof.
   decide (n = m).
   - left; rewrite e; reflexivity.
   - right; intros C; apply n0; inversion C; reflexivity.
-Defined. 
+Defined. (* Todo: Qed? *)
+
 
 (* *)
 Definition variables := list variable.
@@ -760,7 +774,7 @@ Proof.
   induction MAP.
   { left; reflexivity. }
   { right; assumption. }
-Defined.
+Qed.
 
 
 Lemma todo22:
@@ -775,7 +789,7 @@ Proof.
   - left; left; split; auto.
   - right; split; auto.
   - left; right; split; [auto|intros b EL; eapply todo21; eauto].
-Defined.
+Qed.
 
 (* TODO: comment *)
 Definition equiv_assignments (vs : variables) (α1 α2 : assignment) :=
@@ -882,7 +896,7 @@ Section Properties.
     intros ? ? ? ? ? EQ.
     specialize (EQ a); feed EQ; [left; auto | ].
     destruct b; destruct EQ as [b [EV1 EV2]]; destruct b; (inversion_clear EV1; fail || inversion_clear EV2); auto. 
-  Defined.
+  Qed.
   
 
 End Properties.
@@ -978,7 +992,7 @@ Proof.
   induction ϕ; intros ? ? ? EV1 EV2.
   all: inversion_clear EV1; inversion_clear EV2;
     auto 2; eauto 2 using todo2; destruct b1, b2; eauto.
-Defined.
+Qed.
 
 Reserved Notation "ϕ [ x ↦ ψ ]" (at level 10).
 
@@ -1058,14 +1072,14 @@ Section FormulaSizeProperties.
       formula_size (¬ ϕ) = formula_size ϕ.
   Proof.
     intros ?; unfold formula_size; simpl; reflexivity.
-  Defined.
+  Qed.
 
   Lemma todo10:
     forall (ϕl ϕr : formula),
       formula_size (ϕl ∧ ϕr) = formula_size ϕl + formula_size ϕr.
   Proof.
     intros; unfold formula_size; simpl; rewrite app_length; reflexivity.
-  Defined.
+  Qed.
     
   Lemma todo11:
     forall (ϕl ϕr : formula),
@@ -1089,7 +1103,7 @@ Section FormulaSizeProperties.
       apply plus_le_compat; assumption. }
     { simpl; rewrite todo11, todo11.
       apply plus_le_compat; assumption. }
-  Defined.
+  Qed.
   
   Lemma todo18:
     forall (ϕ : formula) (x : variable),
@@ -1104,8 +1118,9 @@ Section FormulaSizeProperties.
       apply plus_le_compat; assumption. }
     { simpl; rewrite todo11, todo11.
       apply plus_le_compat; assumption. }
-  Defined.
+  Qed.
 
+  
   Lemma todo19:
     forall (ϕl ϕr : formula) (x : variable),
       x el leaves (ϕl ∧ ϕr) ->
@@ -1113,8 +1128,9 @@ Section FormulaSizeProperties.
   Proof.
     intros ϕl ϕr x L.
     simpl in L; apply in_app_or_dec in L; auto using eq_var_dec.
-  Defined.
+  Qed.
 
+  (* Del: *)
   Lemma todo20:
     forall (ϕl ϕr : formula) (x : variable),
       x el leaves (ϕl ∨ ϕr) ->
@@ -1122,7 +1138,8 @@ Section FormulaSizeProperties.
   Proof.
     intros ϕl ϕr x L.
     simpl in L; apply in_app_or_dec in L; auto using eq_var_dec. 
-  Defined.
+  Qed.
+  
   
   Lemma todo3:
     forall (ϕ: formula) (x: variable),
@@ -1161,7 +1178,7 @@ Section FormulaSizeProperties.
         { apply Nat.add_lt_mono_l; assumption. }
       }
     }
-  Defined.
+  Qed.
 
   Lemma todo5:
     forall (ϕ: formula) (x: variable),
@@ -1200,32 +1217,33 @@ Section FormulaSizeProperties.
         { apply Nat.add_lt_mono_l; assumption. }
       }
     }
-  Defined.
+  Qed.
 
-  Lemma admit_todo4:
-    forall (ϕ : formula),
-      formula_size ϕ > 0 -> 
-      exists (x : variable),
-        x el leaves ϕ /\
-        formula_size (ϕ[x ↦ T]) < formula_size ϕ.
-  Proof.
-    intros ? SIZE.
-    (* Todo: 3/10 *)
-  Admitted.
-
-  Lemma admit_todo12:
-    forall ϕ v, 
+  Lemma todo12:
+    forall (ϕ : formula) (v : variable), 
       v nel leaves (ϕ [v ↦ T]).
   Proof.
-    admit (* Todo: 1/10 *).
-  Admitted.
+    intros.
+    induction ϕ; intros EL; simpl in *.
+    all: try(auto;fail).
+    all: try(apply in_app_iff in EL; destruct EL as [EL|EL]; auto).
+    decide (v = v0) as [EQ|NEQ].
+    + unfold leaves in *; destruct EL.
+    + apply singl_in in EL; auto.
+  Qed.
 
-  Lemma admit_todo14:
-    forall ϕ v, 
+  Lemma todo14:
+    forall (ϕ : formula) (v : variable), 
       v nel leaves (ϕ [v ↦ F]).
   Proof.
-    admit (* Todo: 1/10 *).
-  Admitted.
+    intros.
+    induction ϕ; intros EL; simpl in *.
+    all: try(auto;fail).
+    all: try(apply in_app_iff in EL; destruct EL as [EL|EL]; auto).
+    decide (v = v0) as [EQ|NEQ].
+    + unfold leaves in *; destruct EL.
+    + apply singl_in in EL; auto.
+  Qed.
 
 
 
@@ -1251,7 +1269,8 @@ Definition sets_all_variables (ϕ: formula) (α: assignment) :=
 
 
 Lemma sets_all_variables_dec:
-  forall (ϕ: formula) (α:assignment), dec (sets_all_variables ϕ α).
+  forall (ϕ : formula) (α :assignment),
+    dec (sets_all_variables ϕ α).
 Proof.
   intros; unfold sets_all_variables.
   induction (leaves ϕ) as [ | v vs].
@@ -1375,7 +1394,7 @@ Section PropertiesOfEquivalence.
         apply ev_conj_fr; apply EQ2; assumption.
       } 
     }
-  Defined.
+  Qed.
   
   Lemma fo_eq_11:
     forall (ϕ1 ϕ2 ψ1 ψ2: formula),
@@ -1406,7 +1425,7 @@ Section PropertiesOfEquivalence.
         - apply EQ2; assumption.
       }
     }
-  Defined.
+  Qed.
 
   (* TODO: More general form? *)
   Lemma formula_equi_1:
@@ -1427,7 +1446,7 @@ Section PropertiesOfEquivalence.
       - apply ev_conj_fr; assumption.
       - apply ev_conj_fl; assumption.
     }    
-  Defined.
+  Qed.
   
   Lemma formula_equi_3:
     forall (ϕ1 ϕ2 ψ : formula),
@@ -1447,7 +1466,7 @@ Section PropertiesOfEquivalence.
       - apply ev_disj_tr; assumption.
       - apply ev_disj_tl; assumption.
     }
-  Defined.
+  Qed.
 
 
   
@@ -1462,7 +1481,7 @@ Section PropertiesOfEquivalence.
       destruct b; simpl in *.
       constructor.
       inversion_clear H0.
-  Defined.
+  Qed.
 
 
   Corollary admit_fo_eq_2:
@@ -1478,14 +1497,21 @@ Section PropertiesOfEquivalence.
   Admitted.
 
   (* TODO: More general form? *)
-  Corollary admit_fo_eq_3:
+  Corollary fo_eq_3:
     forall (ϕ1 ϕ2 : formula),
       equivalent ϕ1 F ->
       equivalent (ϕ1 ∧ ϕ2) F.
   Proof.
-    intros.
-    admit.
-  Admitted.
+    intros ? ? EQU ? ?; split; intros EV.
+    { inversion_clear EV.
+      apply EQU in H; inversion_clear H0.
+      all: try (inversion_clear H).
+      all: try (constructor).
+    }
+    { inversion_clear EV.
+      constructor; apply EQU; constructor.
+    }    
+  Qed.
 
 
 
@@ -1506,7 +1532,7 @@ Section PropertiesOfEquivalence.
         apply EQ; assumption.
       - inversion_clear EV.
     }
-  Defined.
+  Qed.
 
   Corollary admit_fo_eq_21:
     forall (ϕ1 ϕ2 : formula),
@@ -1537,6 +1563,7 @@ Section PropertiesOfEquivalence.
     
   Admitted.
 
+(*
   (* *)
   Lemma substitute_equiv':
     forall (ϕ ψ1 ψ2 : formula) (v : variable),
@@ -1555,7 +1582,7 @@ Section PropertiesOfEquivalence.
       inversion_clear EV; try(constructor; eauto 2; fail). }
     { intros EV.
       inversion_clear EV; try(constructor; eauto 2; fail). }
-  Defined.
+  Qed.
 
   Lemma substitute_equiv:
     forall (ϕ ψ1 ψ2 : formula) (v : variable),
@@ -1565,8 +1592,9 @@ Section PropertiesOfEquivalence.
     intros; split.
     apply substitute_equiv'; apply H.
     apply substitute_equiv'; apply H.
-  Defined.
-
+  Qed.
+  *)
+    
 End PropertiesOfEquivalence.
 
 
@@ -1687,7 +1715,7 @@ Section Algorithm1.
         } 
       }
     }
-  Defined.
+  Qed.
 
   (* TODO: fix name *)
   Lemma all_assignments_in_this_list:
@@ -1729,7 +1757,7 @@ Section Algorithm1.
   Qed.
   
   Definition compute_formula (ϕ : formula) (α : assignment) (SET : sets_all_variables ϕ α):
-    {b: bool | formula_eval ϕ α b}.
+    { b: bool | formula_eval ϕ α b}.
   Proof.
     induction ϕ.
     { exists false. constructor. }
@@ -1833,9 +1861,12 @@ Section Algorithm1.
     destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
   Defined.
 
+  Print Assumptions algorithm1.
+  
   (* => 16 *)
+  Compute (proj1_sig (algorithm1 (x1))).
   Compute (proj1_sig (algorithm1 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5))).
-  Compute (proj1_sig (algorithm1 (x1 ∨ x2 ∨ x3 ∨ x4 ∨ x5))).
+  Compute (proj1_sig (algorithm1 (x1 ∨ x2 ∨ x3 ∨ x4 ∨ x5))). 
 
   
 End Algorithm1.
@@ -1855,18 +1886,84 @@ End Algorithm1.
 
 Section Algorithm2.
 
-  Lemma admit_todo57:
-    forall (ϕ : formula) (x : variable), incl (leaves (ϕ [x ↦ T])) (leaves ϕ).
-  Proof.
-    intros ϕ x.
-  Admitted.
-  
-  Lemma admit_todo58:
-    forall (ϕ : formula) (x : variable), incl (leaves (ϕ [x ↦ F])) (leaves ϕ).
-  Proof.
-    intros ϕ x.
-  Admitted.
+  Section SubstitutionProperties.
+    
+    Lemma todo57:
+      forall (ϕ : formula) (x : variable),
+        incl (leaves (ϕ [x ↦ T])) (leaves ϕ).
+    Proof.
+      intros ϕ x v EL.
+      induction ϕ.
+      - destruct EL.
+      - destruct EL.
+      - simpl in EL; decide (x = v0); [destruct EL|assumption].
+      - apply IHϕ; assumption.
+      - simpl in EL; apply in_app_iff in EL; destruct EL as [EL|EL];
+          simpl; apply in_app_iff; [left|right]; auto.
+      - simpl in EL; apply in_app_iff in EL; destruct EL as [EL|EL];
+          simpl; apply in_app_iff; [left|right]; auto.
+    Qed.
 
+    Corollary todo71:
+      forall ϕ x (α: assignment),
+        sets_all_variables ϕ α ->
+        sets_all_variables (ϕ [x ↦ T]) α.
+    Proof.
+      intros ? ? ? SET.
+      intros v EL; apply SET.
+      apply todo57 in EL; assumption.
+    Qed.
+
+    
+    Lemma todo58:
+      forall (ϕ : formula) (x : variable),
+        incl (leaves (ϕ [x ↦ F])) (leaves ϕ).
+    Proof.
+      intros ϕ x v EL.
+      induction ϕ.
+      - destruct EL.
+      - destruct EL.
+      - simpl in EL; decide (x = v0); [destruct EL|assumption].
+      - apply IHϕ; assumption.
+      - simpl in EL; apply in_app_iff in EL; destruct EL as [EL|EL];
+          simpl; apply in_app_iff; [left|right]; auto.
+      - simpl in EL; apply in_app_iff in EL; destruct EL as [EL|EL];
+          simpl; apply in_app_iff; [left|right]; auto.
+    Qed.
+
+    Corollary todo72:
+      forall ϕ x (α: assignment),
+        sets_all_variables ϕ α ->
+        sets_all_variables (ϕ [x ↦ F]) α.
+    Proof.
+      intros ? ? ? SET.
+      intros v EL; apply SET.
+      apply todo58 in EL; assumption.
+    Qed.
+    
+
+
+    Lemma admit_todo73:
+      forall (ϕ : formula) (v1 v2 : variable),
+        v1 <> v2 ->
+        v1 el leaves ϕ ->
+        v1 el leaves (ϕ [v2 ↦ T]).
+    Proof.
+      intros ? ? ? NEQ EL.
+      
+    Admitted.
+
+    
+    Lemma admit_todo74:
+      forall (ϕ : formula) (v1 v2 : variable),
+        v1 <> v2 ->
+        v1 el leaves ϕ ->
+        v1 el leaves (ϕ [v2 ↦ F]).
+    Proof.
+      intros ? ? ? NEQ EL.
+    Admitted.  
+
+  End SubstitutionProperties.
 
   Section BaseCase.
 
@@ -1930,9 +2027,9 @@ Section Algorithm2.
         - destruct IHϕ2 as [IH2|IH2].
           + left; apply admit_fo_eq_2; auto.
           + right; clear IH1.
-            apply formula_equi_1, admit_fo_eq_3; auto.
+            apply formula_equi_1, fo_eq_3; auto.
         - right; clear IHϕ2.
-          apply admit_fo_eq_3; auto.
+          apply fo_eq_3; auto.
       }
       { rewrite todo11 in SIZE.
         apply plus_is_O in SIZE.
@@ -1948,138 +2045,176 @@ Section Algorithm2.
       }
     Defined.
 
-    
-    Lemma admit_count3:
-      number_of_sat_assignments T 1.
-    Proof. 
-      intros.
-      exists [[]]; repeat split.  
-      - constructor; [easy| constructor]. 
-      - intros ? ? EL1 EL2 NEQ.
-        exfalso; apply NEQ.
-        admit.
-      - intros ? EL.
-        admit.
-      - intros.
-        exists [].
-        simpl; split.
-        intros v EL. easy.
-        left; reflexivity.
-    Admitted.
-
-    Corollary admit_count5:
+    Lemma count5:
       forall (ϕ : formula),
         formula_size ϕ = 0 -> 
         equivalent ϕ T -> 
         number_of_sat_assignments ϕ 1.
     Proof.
-      intros.
-    Admitted.
-
-    
-    Lemma admit_count4: 
-      number_of_sat_assignments F 0.
+      intros ? Z EQ.
+      exists [[]]; repeat split.  
+      - constructor; [easy| constructor]. 
+      - intros ? ? EL1 EL2 NEQ.
+        exfalso; apply NEQ.
+        apply singl_in in EL1; apply singl_in in EL2; subst.
+        auto.
+      - intros ? EL.
+        apply singl_in in EL; subst.
+        apply EQ.
+        constructor.
+      - intros.
+        exists []; split.
+        apply length_zero_iff_nil in Z; rewrite Z.
+        + easy.        
+        + left; auto.
+    Qed.
+          
+    Corollary count3:
+      number_of_sat_assignments T 1.
     Proof.
-      intros.
-      exists []; repeat split; intros.
-      - constructor.
-      - easy.
-      - easy.
-      - admit.
-    Admitted.
-
-    Corollary admit_count6:
+      apply count5.
+      - reflexivity.
+      - apply formula_equivalence_refl.
+    Qed.      
+      
+    Lemma count6:
       forall (ϕ : formula),
         formula_size ϕ = 0 -> 
         equivalent ϕ F -> 
         number_of_sat_assignments ϕ 0.
     Proof.
-      intros.
-    Admitted.
+      intros ? Z EQ.
+      exists []; repeat split.  
+      - constructor.
+      - intros ? ? EL1 EL2 NEQ; destruct EL1.
+      - intros ? EL; destruct EL.
+      - intros α [_ SAT].
+        apply EQ in SAT.
+        inversion_clear SAT.
+    Qed.
+    
+    Corollary count4: 
+      number_of_sat_assignments F 0.
+    Proof.
+      apply count6.
+      - reflexivity.
+      - apply formula_equivalence_refl.
+    Qed.
     
   End BaseCase.
   
-  Section Induc.
-
-
-
-    Variable ϕ : formula.
-    Variable x : variable.
-
-    Hypothesis H_leaf : x el leaves ϕ.
+  Section InductionStep.
 
 
     
     Lemma admit_switch:
-      forall (ϕ : formula) (x : variable),
-        equivalent ϕ ([|x|] ∧ ϕ[x ↦ T] ∨ ¬[|x|] ∧ ϕ[x ↦ F]). 
+      forall (ϕ : formula) (x : variable) (α : assignment) (b : bool),
+        x el vars_in α ->
+        ℇ (ϕ) α ≡ b <-> ℇ ([|x|] ∧ ϕ[x ↦ T] ∨ ¬[|x|] ∧ ϕ[x ↦ F]) α ≡ b.
     Proof.
-      
+      intros ϕ ? ? ? SET; split; intros EV;
+        generalize dependent b; generalize dependent α; generalize dependent x;
+          induction ϕ; intros.
+      - simpl; inversion_clear EV; constructor.
+        + apply ev_conj_fr; constructor.
+        + apply ev_conj_fr; constructor.
+      - simpl; inversion_clear EV.
+        destruct (mapsto_dec _ _ SET) as [M|M].
+        + apply ev_disj_tl; auto.
+        + apply ev_disj_tr; auto.
+      - simpl; decide (x = v) as [EQ|NEQ]; [subst | ].
+        + inversion_clear EV; destruct (mapsto_dec _ _ SET) as [M|M].
+          admit. admit.
+        + admit.
+      - inversion_clear EV.
+        specialize (IHϕ _ _ SET _ H). 
+        destruct b.
+        admit.
+        admit.
+      - admit.
+      - admit.
+        
+      - destruct (mapsto_dec _ _ SET); destruct b; inversion_clear EV.
+        all: try(constructor; fail).
+        all: try(inversion_clear H; inversion_clear H1; fail).
+      - destruct (mapsto_dec _ _ SET); destruct b; inversion_clear EV.
+        all: try(constructor; fail).
+        inversion_clear H. inversion_clear H1. admit. inversion_clear H1.
+        inversion_clear H0. inversion_clear H1. inversion_clear H0. admit.  admit.
+      - admit.
+      - admit.
+      - admit.
+      - admit.
     Admitted.
 
-    
 
+    Variable ϕ : formula.
     
+    Variable x : variable.
+    Hypothesis H_leaf : x el leaves ϕ.
+
     Variables αs1 αs2 : assignments.
     
     
-    Lemma admit_todo54:
+    Lemma todo54:
       dupfree (leaves (ϕ [x ↦ T])) αs1 ->
       dupfree (leaves (ϕ [x ↦ F])) αs2 ->
       dupfree (leaves ϕ) (map (cons (x, true)) αs1 ++ map (cons (x, false)) αs2).
     Proof.
       intros [ND1 NE1] [ND2 NE2].
       split.
-    { apply dfnn_ext; [ | assumption | assumption].
-      intros F; inversion_clear F.
-    }
-    { intros α1 α2 EL1 EL2 EQ NEQ. 
-      apply in_app_iff in EL1; apply in_app_iff in EL2.
-      destruct EL1 as [EL1|EL1], EL2 as [EL2|EL2]. 
-      { apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
-        apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]]; subst α1 α2.
-        specialize (NE1 _ _ EL1 EL2).
-        feed NE1; [intros C; apply EQ; rewrite C; reflexivity | ].
-        apply NE1; clear NE1.
-        apply todo28 with (vs_sub := leaves (ϕ [x ↦ T])) in NEQ;
-          [assumption | apply admit_todo57 | apply admit_todo12].
+      { apply dfnn_ext; [ | assumption | assumption].
+        intros F; inversion_clear F.
       }
-      { specialize (NEQ x).
-        feed NEQ; [assumption | ].
-        destruct NEQ as [b [ EV1 EV2]].
-        apply in_map_iff in EL1; apply in_map_iff in EL2.
-        destruct EL1 as [α1_tl [EQ1 _]], EL2 as [α2_tl [EQ2 _]]; subst α1 α2.
-        inversion EV1; subst; auto.
-        inversion EV2; subst; auto.
-      }
-      { specialize (NEQ x).
-        feed NEQ; [assumption | ].
-        destruct NEQ as [b [ EV1 EV2]].
-        apply in_map_iff in EL1; apply in_map_iff in EL2.
+      { intros α1 α2 EL1 EL2 EQ NEQ. 
+        apply in_app_iff in EL1; apply in_app_iff in EL2.
+        destruct EL1 as [EL1|EL1], EL2 as [EL2|EL2]. 
+        { apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
+          apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]]; subst α1 α2.
+          specialize (NE1 _ _ EL1 EL2).
+          feed NE1; [intros C; apply EQ; rewrite C; reflexivity | ].
+          apply NE1; clear NE1.
+          apply todo28 with (vs_sub := leaves (ϕ [x ↦ T])) in NEQ;
+            [assumption | apply todo57 | apply todo12].
+        }
+        { specialize (NEQ x).
+          feed NEQ; [assumption | ].
+          destruct NEQ as [b [ EV1 EV2]].
+          apply in_map_iff in EL1; apply in_map_iff in EL2.
           destruct EL1 as [α1_tl [EQ1 _]], EL2 as [α2_tl [EQ2 _]]; subst α1 α2.
-            inversion EV1; subst; auto.
-            inversion EV2; subst; auto.
-            }
-            { apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
-              apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]]; subst α1 α2.
-              specialize (NE2 _ _ EL1 EL2).
-              feed NE2; [intros C; apply EQ; rewrite C; reflexivity | ].
-              apply NE2; clear NE2.
-              apply todo28 with (vs_sub := leaves (ϕ [x ↦ F])) in NEQ;
-                [assumption | apply admit_todo58 | apply admit_todo14].
-            }
-            }
+          inversion EV1; subst; auto.
+          inversion EV2; subst; auto.
+        }
+        { specialize (NEQ x).
+          feed NEQ; [assumption | ].
+          destruct NEQ as [b [ EV1 EV2]].
+          apply in_map_iff in EL1; apply in_map_iff in EL2.
+          destruct EL1 as [α1_tl [EQ1 _]], EL2 as [α2_tl [EQ2 _]]; subst α1 α2.
+          inversion EV1; subst; auto.
+          inversion EV2; subst; auto.
+        }
+        { apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
+          apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]]; subst α1 α2.
+          specialize (NE2 _ _ EL1 EL2).
+          feed NE2; [intros C; apply EQ; rewrite C; reflexivity | ].
+          apply NE2; clear NE2.
+          apply todo28 with (vs_sub := leaves (ϕ [x ↦ F])) in NEQ;
+            [assumption | apply todo58 | apply todo14].
+        }
+      }
     Qed.
 
     (* Note that it is not a brute-force. *)
     Lemma todo55:
-      set_with_sat_assignments (ϕ [x ↦ T]) αs1 -> 
-      set_with_sat_assignments (ϕ [x ↦ F]) αs2 -> 
+      set_with_sat_assignments (ϕ[x ↦ T]) αs1 -> 
+      set_with_sat_assignments (ϕ[x ↦ F]) αs2 -> 
       set_with_sat_assignments
         ϕ (map (cons (x, true)) αs1 ++ map (cons(x, false)) αs2).
     Proof.
       intros SAT1 SAT2; intros α ELt.
       apply admit_switch with x.
+      { apply in_app_iff in ELt; destruct ELt as [EL|EL]; apply in_map_iff in EL;
+          destruct EL as [α_tl [EQ EL]]; subst α; simpl; left; reflexivity. }
       apply in_app_or in ELt; destruct ELt as [EL|EL].
       { apply ev_disj_tl, ev_conj_t.
         { apply in_map_iff in EL.
@@ -2088,7 +2223,7 @@ Section Algorithm2.
         { apply in_map_iff in EL.
           destruct EL as [mα [EQ MEM]]; subst α.
           apply admit_todo13.
-          apply admit_todo12.
+          apply todo12.
           apply SAT1; assumption.
         }
       }
@@ -2098,76 +2233,58 @@ Section Algorithm2.
         }
         { apply in_map_iff in EL.
           destruct EL as [mα [EQ MEM]]; subst α.
-          apply admit_todo13. apply admit_todo14.
+          apply admit_todo13. apply todo14.
           apply SAT2; assumption.
         }
       }
     Qed.
     
-    Lemma admit_todo56:
-      list_of_all_sat_assignments (ϕ [x ↦ T]) αs1 ->
-      list_of_all_sat_assignments (ϕ [x ↦ F]) αs2 ->
-      set_with_all_sat_assignments ϕ (map (cons (x, true)) αs1 ++ map (cons (x, false)) αs2).
+    Lemma todo56:
+      set_with_all_sat_assignments (ϕ [x ↦ T]) αs1 -> 
+      set_with_all_sat_assignments (ϕ [x ↦ F]) αs2 -> 
+      set_with_all_sat_assignments
+        ϕ (map (cons (x, true)) αs1 ++ map (cons (x, false)) αs2).
     Proof.
-      intros LAA1 LAA2.
-      intros α [SETS SAT]; apply admit_switch with (x:=x) in SAT.
-      assert (t: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ T]) α ).
-      { admit. }
-      assert (f: forall (α: assignment) (H: sets_all_variables ϕ α), sets_all_variables (ϕ [x ↦ F]) α ).
-      { admit. }
-
-      
-      
-      
+      intros SET1 SET2. 
+      intros α [SETS SAT].
+      apply (admit_switch _ x _ _ (SETS x H_leaf)) in SAT.
       inversion_clear SAT; inversion_clear H.
-      
-
-      
-      {
-        
-        unfold list_of_all_sat_assignments in *.
-        destruct LAA1 as [M1 [M2 M3]].
-        unfold set_with_all_sat_assignments, set_with_all in M3.
-
-        
-        specialize (M3 α); feed M3. split. apply t; auto. auto. 
-        destruct M3 as [β [EQ EL]].
+      { specialize (SET1 α); feed SET1.
+        { split; [apply todo71| ]; auto. } 
+        destruct SET1 as [β [EQ EL]].
         inversion_clear H0. 
-
         exists ((x,true)::β); split.
         { intros v ELl.
-          decide (v = x) as [E|NEQ]; [subst | ].
+          decide (v = x) as [E|NEQ]; [subst | ]. 
           exists true; split; [assumption| constructor].
           specialize (EQ v).
-          admit (* Todo: 4/10 *). }
+          feed EQ; [apply admit_todo73;auto| ].
+          destruct EQ as [b [EV1 EV2]].
+          exists b; split; [ |constructor]; assumption. 
+        }
         { apply in_app_iff; left.
           apply in_map_iff; exists β; easy.
         }
       }
-      {
-
-
-        unfold list_of_all_sat_assignments in *.
-        destruct LAA2 as [M1 [M2 M3]].
-        unfold set_with_all_sat_assignments, set_with_all in M3.
-
-        
-        specialize (M3 α); feed M3. split. apply f; auto. auto. 
-        destruct M3 as [β [EQ EL]].
-
-        inversion_clear H0. 
+      { specialize (SET2 α); feed SET2.
+        { split; [apply todo72| ]; auto. }
+        destruct SET2 as [β [EQ EL]].
+        inversion_clear H0; inversion_clear H; simpl in H0.
         exists ((x,false)::β); split.
-        { admit (* Todo: 6/10 *). }
+        { intros v ELl.
+          decide (v = x) as [E|NEQ]; [subst | ].
+          exists false; split; [assumption| constructor].
+          specialize (EQ v).
+          feed EQ; [apply admit_todo74;auto| ].
+          destruct EQ as [b [EV1 EV2]].
+          exists b; split; [ |constructor]; assumption. 
+        }
         apply in_app_iff; right.
         apply in_map_iff; exists β; easy.
-      }
-
-
-    Admitted.
+      } 
+    Qed.
     
-    
-
-  End Induc.
+  End InductionStep.
   
   Definition algorithm2:
     forall (ϕ : formula), {n : nat | number_of_sat_assignments ϕ n}.
@@ -2175,8 +2292,8 @@ Section Algorithm2.
     apply size_recursion with formula_size; intros ϕ IHϕ. 
     destruct (formula_size_dec ϕ) as [Zero|Pos].
     { destruct (zero_size_formula_constant_dec ϕ Zero) as [Tr|Fl].
-      - exists 1; apply admit_count5; assumption.
-      - exists 0; apply admit_count6; assumption. } 
+      - exists 1; apply count5; assumption.
+      - exists 0; apply count6; assumption. } 
     { assert (V := get_var _ Pos).
       destruct V as [x IN]; clear Pos.
       assert (IH1 := IHϕ (ϕ[x ↦ T])); assert(IH2 := IHϕ (ϕ[x ↦ F])); clear IHϕ.
@@ -2186,28 +2303,268 @@ Section Algorithm2.
       destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
       exists (map (fun α => (x, true)::α) αs1 ++ map (fun α => (x,false)::α) αs2).
       split; [split; [ | split] | ].
-      { destruct LAA1 as [ND1 _], LAA2 as [ND2 _]; apply admit_todo54; auto. }
+      { destruct LAA1 as [ND1 _], LAA2 as [ND2 _]; apply todo54; auto. }
       { destruct LAA1 as [_ [SAT1 _]], LAA2 as [_ [SAT2 _]]; apply todo55; auto. }
-      { apply admit_todo56; assumption. } 
+      { destruct LAA1 as [_ [_ SET1]], LAA2 as [_ [_ SET2]];apply todo56; assumption. } 
       { rewrite app_length, map_length, map_length, <- LEN1, <- LEN2; reflexivity. } 
-    } 
+    }
   Defined.
 
+  (* TODO; change def of list_of_all_sat_assign, to get dec thing. *)
+  Definition algorithm2_list:
+    forall (ϕ : formula), { αs : assignments | list_of_all_sat_assignments ϕ αs }.
+  Proof.
+    apply size_recursion with formula_size; intros ϕ IHϕ. 
+    destruct (formula_size_dec ϕ) as [Zero|Pos].
+    { destruct (zero_size_formula_constant_dec ϕ Zero) as [Tr|Fl].
+      {  exists [[]]; repeat split.
+        - constructor; [easy| constructor]. 
+        - intros ? ? EL1 EL2 NEQ.
+          exfalso; apply NEQ.
+          apply singl_in in EL1; apply singl_in in EL2; subst.
+          auto.
+        - intros ? EL.
+          apply singl_in in EL; subst.
+          apply Tr.
+          constructor.
+        - intros.
+          exists []; split.
+          apply length_zero_iff_nil in Zero; rewrite Zero.
+          + easy.        
+          + left; auto.
+      }
+      { exists []; repeat split.  
+        - constructor.
+        - intros ? ? EL1 EL2 NEQ; destruct EL1.
+        - intros ? EL; destruct EL.
+        - intros α [_ SAT].
+          apply Fl in SAT.
+          inversion_clear SAT.
+      }
+    }
+    { assert (V := get_var _ Pos).
+      destruct V as [x IN]; clear Pos.
+      assert (IH1 := IHϕ (ϕ[x ↦ T])); assert(IH2 := IHϕ (ϕ[x ↦ F])); clear IHϕ.
+      specialize (IH1 (todo3 _ _ IN)); specialize (IH2 (todo5 _ _ IN)).
+      destruct IH1 as [αs1 EQ1], IH2 as [αs2 EQ2].
+      exists ((map (cons (x, true)) αs1 ++ map (cons (x,false)) αs2)).
+      split; [ | split].
+      { destruct EQ1 as [ND1 _], EQ2 as [ND2 _]; apply todo54; auto. }
+      { destruct EQ1 as [_ [SAT1 _]], EQ2 as [_ [SAT2 _]]; apply todo55; auto. }
+      { destruct EQ1 as [_ [_ SET1]], EQ2 as [_ [_ SET2]];apply todo56; assumption. } 
+    }
+  Defined.
+  
+  Print Assumptions algorithm2.
+  
   (* => 32 *)
-  Compute (proj1_sig (algorithm2 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6))).
+  (* Compute (proj1_sig (algorithm2 (fold_left (fun ϕ x => ϕ ⊕ [|V x|]) ([1;2;3;4;5;6;7;8;9]) F))). *)
+  (* Compute (proj1_sig (algorithm1 (x0 ⊕ x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6 ⊕ x7))).
+  Compute (proj1_sig (algorithm2 (x0 ⊕ x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5 ⊕ x6 ⊕ x7))). *)
 
 End Algorithm2.
 
-(** * Algorithm 3: *)
-(** With certificates and DNF *)
-Section Algorithm3.
+(** * "Bonus" 1: Counting k-Cliques. *)
+(** This "bonus" gives nothing significant. The only reason I include this section is 
+    to see the performance of the algorithms on real formulas. *)
+Section kCliques.
 
+  (* TODO: check *)
+  (* Full proof of the correctness seems quite difficult, since one has to: 
+     0) define the notion of a graph
+     1) define the notion of clique 
+     2) define the notion of the number of k-cliques
+     3) construct a reduction k-Clique problem to formula satisfiability problem
+     4) show that this reduction respects the number of cliques!
+        (i.e., the standart reduction for decision problems doesn't work). *)
+  
+  (* Considering the foregoing, I won't prove any properties of the reduction.
+     I'll use the problem of counting the k-cliques as a "generator" of 
+     nontrivial boolean formulas. *)
+
+  (* Mostly, the resulting formulas TODO very big (200+ leaves), so evaluation 
+     does take looong time. However, for small examples I was able to count TODO *)
+
+  Record graph :=
+    { vtcs : list nat; 
+      edges : nat -> nat -> bool;
+(*    arefl : rel_list_antirefl vtcs edges *)
+(*    sym : rel_list_sym vtcs edges        *)
+    }.
+
+  Definition cart_prod {X : Type} (xs ys : list X) : list (X * X) :=
+    flat_map (fun x => map (fun y => (x,y)) ys) xs.
+
+  Definition lt_pairs (xs : list nat) : list (nat * nat) :=
+    filter (fun '(x,y) => if lt_dec x y then true else false) (cart_prod xs xs).
+
+  Definition le_pairs (xs : list nat) : list (nat * nat) :=
+    filter (fun '(x,y) => if le_dec x y then true else false) (cart_prod xs xs).
+
+  Definition neq_pairs (xs : list nat) : list (nat * nat) :=
+    filter (fun '(x,y) => if nat_eq_dec x y then false else true) (cart_prod xs xs).
+  
+  Fixpoint range (l r : nat): list nat :=
+    match l,r with
+    | 0,0 => [0]
+    | l,S r => if le_dec l (S r) then range l r ++ [S r] else []
+    | _,_ => []
+    end.
+
+  Definition transform (k : nat) (g : graph) : formula :=
+    (* Extract vertices and edges from graph. *)
+    let '(Vs, Es) :=
+        match g with
+          {| vtcs := vtcs; edges := edges |} =>
+          (vtcs, edges)
+        end in
+
+    (* Pick at least one vertex from each group. *)
+    let r1 : formula :=
+        fold_left
+          Conj
+          (map (fun k =>
+                  fold_left
+                    Disj
+                    (map (fun v => [|V (100 * k + v)|]) Vs)
+                    F
+               )
+               (range 0 (k-1)))
+          T
+    in
+
+    (* Pick at most one vertext from each group. *)
+    let r2 :=
+        fold_left
+          Conj 
+          (flat_map
+             (fun k =>
+                map
+                  (fun '(v1,v2) => ¬[|V (100 * k + v1) |] ∨ ¬ [|V (100 * k + v2) |])
+                  (lt_pairs Vs)
+             )
+             (range 0 (k-1)))
+          T in
+
+    (* Can't pick TODO *)
+    let r3 : formula :=
+        fold_left
+          Conj 
+          (map
+             (fun '(k1,k2) =>
+                fold_left
+                  Conj 
+                  (map (fun v => ¬ [|V (100 * k1 + v)|] ∨ ¬ [|V (100 * k2 + v)|]) Vs)
+                  T
+             )
+             (lt_pairs (range 0 (k-1))))
+          T
+    in 
+
+    let r4 : formula :=
+        fold_left
+          Conj 
+
+          (
+            
+            
+            (map
+               (fun '(v1,v2) =>
+
+
+                  fold_left
+                    Conj
+                    (map (fun '(k1,k2) =>
+                            ¬ [|V (100 * k1 + v2)|] ∨ ¬ [|V (100 * k2 + v1)|]
+                         ) (lt_pairs (range 0 (k-1))))
+                    T
+               )
+               (lt_pairs Vs))
+              
+
+          ) 
+          T
+    in
+
+    
+    let r5 : formula :=
+        fold_left
+          Conj 
+          (flat_map (fun '(vl,vg) =>
+                       if Es vl vg
+                       then []
+                       else map (fun '(k1,k2) =>
+                                   ¬ [|V (100*k1 + vl)|] ∨ ¬ [|V (100*k2 + vg)|])
+                                (neq_pairs (range 0 (k-1)))
+                    ) (lt_pairs Vs))
+          T
+    in
+
+ 
+
+    
+    r1 ∧ r2 ∧ r3 ∧ r4 ∧ r5.
+
+  Definition counting_k_cliques (k : nat) (g : graph) :=
+    proj1_sig (algorithm2 (transform k g)).
+  
+  Definition graph1 :=
+    {| vtcs := [1;2;3;4;5];
+       edges v1 v2 :=
+         match v1, v2 with
+         | 1,2 | 2,1 => true
+         | 1,3 | 3,1 => true
+         | 2,3 | 3,2 => true
+
+         | 1,4 | 4,1 => true 
+         | 1,5 | 5,1 => true
+                         
+         | _, _ => false
+         end;
+    |}.
+
+  (* TODO: spelling? *)
+    Definition graph_pentagram :=
+    {| vtcs := [1;2;3;4;5];
+       edges v1 v2 :=
+         match v1, v2 with
+         | 1,2 | 2,1 => true
+         | 1,3 | 3,1 => true
+         | 1,4 | 4,1 => true
+         | 1,5 | 5,1 => true
+
+         | 2,3 | 3,2 => true
+         | 2,4 | 4,2 => true
+         | 2,5 | 5,2 => true
+
+         | 3,4 | 4,3 => true
+         | 3,5 | 5,3 => true
+
+         | 4,5 | 5,4 => true
+                         
+         | _, _ => false
+         end;
+    |}.
+
+    
+    Compute ( (transform 3 graph_pentagram)). 
+    (* Compute (counting_k_cliques 3 graph_pentagram). *)
+  
+    
+End kCliques.
+
+
+(** * Bonus 2: A (failed) attempt to come up with a third algorithm. *)
   (* Algorithm
    1) Transform ϕ to dnf
    2) Map each monomial into a certificate1
    3) By construction, all these certificates are disjoint
    4) Calculate the number of sat. assignments
    *)
+(** With certificates and DNF *)
+Section Algorithm3.
+
+
 
 
   Section Literal.
@@ -2367,7 +2724,7 @@ Section Algorithm3.
       destruct REP as [ψ REP].
       exists ψ; apply admit_tr_eq_rep with ϕ1; auto.
       apply formula_equivalence_sym; assumption.
-    Defined.
+    Qed.
 
 
     Lemma admit_todo50:
@@ -2491,9 +2848,9 @@ Section Algorithm3.
         - apply fo_eq_11; assumption.
         - split; assumption.
       }
-    Defined.
+    Qed.
 
-    Compute (proj1_sig (move_negations (¬ (x0 ∨ x1) ∧ (x2 ∨ x3)))).
+    (* Compute (proj1_sig (move_negations (¬ (x0 ∨ x1) ∧ (x2 ∨ x3)))). *)
 
     Lemma dnf_representation_of_T:
       dnf_representation T [[]].   
@@ -2514,7 +2871,7 @@ Section Algorithm3.
           destruct H0 as [t  [IN EV]].
           inversion_clear IN.
       } 
-    Defined.
+    Qed.
 
     Lemma dnf_representation_of_F:
       dnf_representation F [].   
@@ -2528,7 +2885,7 @@ Section Algorithm3.
         - destruct H as [m [IN EV]]; inversion_clear IN.
         - constructor.
       } 
-    Defined.
+    Qed.
 
     Lemma dnf_representation_of_var:
       forall (v : variable),
@@ -2564,7 +2921,7 @@ Section Algorithm3.
           inversion_clear F; assumption.
         }
       }
-    Defined.
+    Qed.
 
     Lemma dnf_representation_of_neg_var:
       forall (v: variable),
@@ -2600,7 +2957,7 @@ Section Algorithm3.
           inversion_clear F; assumption.
         }
       }
-    Defined.
+    Qed.
 
     Section And.
       
@@ -2610,7 +2967,7 @@ Section Algorithm3.
                     map (fun (x: list X) => x ++ y) xs) ys.
 
       (* => [[x0;x1; x4;x5]; [x2;x3; x4;x5]; [x0;x1; x6;x7]; [x2;x3; x6;x7]] *)
-      Compute (flat_product ([[x0;x1];[x2;x3]]) ([[x4;x5];[x6;x7]])).
+      (* Compute (flat_product ([[x0;x1];[x2;x3]]) ([[x4;x5];[x6;x7]])). *)
 
       Lemma todo43:
         forall (X : Type) (xss yss : list (list X)) (xs ys : list X),
@@ -2702,7 +3059,7 @@ Section Algorithm3.
             all: try(inversion_clear Fl; specialize (H _ EL); eauto using todo48). 
           }
         }
-      Defined.
+      Qed.
 
     End And.
     
@@ -2738,7 +3095,7 @@ Section Algorithm3.
           constructor; intros m EL;
             apply H; apply in_app_iff; [left|right]; assumption.
       }     
-    Defined.
+    Qed.
 
     Definition to_dnf ( ϕ : formula): { ψ : dnf | dnf_representation ϕ ψ }.
     Proof.
@@ -2777,9 +3134,9 @@ Section Algorithm3.
         destruct IHneg_ϕ1 as [ψ1 REP1], IHneg_ϕ2 as [ψ2 REP2].
         exists (ψ1 ++ ψ2); apply dnf_representation_of_or; auto.
       }
-    Defined.
+    Qed.
 
-    Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))).
+    (* Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))). *)
 
     End FormulaToDNF.
 
@@ -2791,7 +3148,8 @@ Section Algorithm3.
           v el vars_in α ->
           v / α ↦ b ->
           v / ext_α ↦ b.
-      
+
+      (* TODO: pred ~> record *)
       Definition certificate1 (ϕ : formula) (ξ : assignment) :=
         forall ext_ξ, ext_assignment (leaves ϕ) ξ ext_ξ -> ℇ (ϕ) ext_ξ ≡ true.
 
@@ -2816,6 +3174,50 @@ Section Algorithm3.
         - simpl; constructor; constructor.
       Qed.
 
+      Lemma admit_monomial_to_certificate1:
+        forall (ϕ : formula) (ψ : dnf),
+          dnf_representation ϕ ψ -> 
+          forall (mon : monomial),
+            mon el ψ ->
+            monomial_satisfiable mon ->
+            { ξ | certificate1 ϕ ξ }.
+      Proof.
+        intros ? ? DNF ? MON SAT.
+
+      Admitted.
+        
+
+      Definition all_extensions_on (ξ : assignment) (vs : variables): assignments :=
+        map (fun β => ξ ++ β) (all_assignments_on vs). 
+
+      Lemma admit_contains_extensions:
+        forall (ξ : assignment) (vs : variables) (α : assignment),
+          α el all_extensions_on ξ vs ->
+          ext_assignment vs ξ α.
+      Proof.
+        intros ? ? ? EL.
+        apply in_map_iff in EL; destruct EL as [α_tl [EQ EL]]; subst α.
+        split.
+        { admit. }
+        { intros ? ? EL2 EV.
+          admit.
+        }
+      Admitted.
+          
+      Lemma size_of_list_of_all_extensions:
+        forall (ξ : assignment) (vs : variables),
+          length (all_extensions_on ξ vs) = Nat.pow 2 (length vs).
+      Proof.
+        induction vs; simpl. 
+        { reflexivity. }
+        { unfold all_extensions_on in *; simpl.
+          rewrite !map_length in IHvs.
+          rewrite !map_length, app_length, !map_length, <- plus_n_O, <- IHvs.
+          reflexivity. } 
+      Qed. 
+
+
+      (* TODO: del everything below *)
       Definition no_confl_literals (mon : monomial) :=
         forall v, Positive v nel mon \/ Negative v nel mon.
 
