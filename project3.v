@@ -1033,11 +1033,34 @@ Lemma admit_equiv_sat:
       ℇ (ϕ) α ≡ b ->
       ℇ (ϕ) β ≡ b.
 Proof.
-  intros ? ? ? EQ b EV.
-  
-Admitted.
-
-
+  intros ?; induction ϕ; intros ? ? EQ b EV.
+  - inversion_clear EV; constructor.
+  - inversion_clear EV; constructor.
+  - inversion_clear EV.
+    specialize (EQ v); feed EQ; [left;reflexivity| ].
+    destruct EQ as [b' [EV1 EV2]].
+    assert(EQ := todo2 _ _ _ _ H EV1); subst b'.
+    constructor; assumption.
+  - apply IHϕ with (b := negb b) in EQ.
+    + constructor; assumption.
+    + inversion_clear EV; assumption.
+  - specialize (IHϕ1 α β); feed IHϕ1. 
+    { eapply todo27; eauto; intros x IN; simpl; apply in_app_iff; left; auto. } 
+    specialize (IHϕ2 α β); feed IHϕ2. 
+    { eapply todo27; eauto; intros x IN; simpl; apply in_app_iff; right; auto. } 
+    inversion_clear EV.
+    + constructor; eauto.
+    + apply ev_conj_fl; eauto.
+    + apply ev_conj_fr; eauto.
+  - specialize (IHϕ1 α β); feed IHϕ1. 
+    { eapply todo27; eauto; intros x IN; simpl; apply in_app_iff; left; auto. } 
+    specialize (IHϕ2 α β); feed IHϕ2. 
+    { eapply todo27; eauto; intros x IN; simpl; apply in_app_iff; right; auto. } 
+    inversion_clear EV.
+    + constructor; eauto.
+    + apply ev_disj_tl; eauto.
+    + apply ev_disj_tr; eauto.
+Qed.
 
 
 Lemma admit_todo13:
@@ -1058,24 +1081,30 @@ Proof.
     - simpl in *; inversion_clear EV.
       specialize (IHϕ _ _ NEL _ H a).
       constructor; assumption.
-    - admit. 
-    - admit.
+    - inversion_clear EV; [constructor|apply ev_conj_fl|apply ev_conj_fr].
+      all: try(apply IHϕ1; auto; intros EL; apply NEL; apply in_app_iff; left; assumption).
+      all: try(apply IHϕ2; auto; intros EL; apply NEL; apply in_app_iff; right; assumption).
+    - inversion_clear EV; [constructor|apply ev_disj_tl|apply ev_disj_tr].
+      all: try(apply IHϕ1; auto; intros EL; apply NEL; apply in_app_iff; left; assumption).
+      all: try(apply IHϕ2; auto; intros EL; apply NEL; apply in_app_iff; right; assumption).
   }
   { induction ϕ; intros.
-    - inversion_clear EV. constructor.
-    - inversion_clear EV. constructor.
-    - destruct b.
-      inversion EV; subst. inversion H0; subst. exfalso; apply NEL. left; auto. 
-      constructor. assumption.
-      constructor.
-
-      inversion EV; subst.
-      inversion H0; subst. exfalso; apply NEL; left. reflexivity. assumption.
-    - admit.
-    - admit.
-    - admit.
+    - inversion_clear EV; constructor.
+    - inversion_clear EV; constructor.
+    - inversion EV; subst.
+      inversion H0; subst.
+      + exfalso; apply NEL; left; auto. 
+      + constructor; assumption.
+    - inversion_clear EV; constructor.
+      eapply IHϕ; eauto.
+    - inversion_clear EV; [constructor|apply ev_conj_fl|apply ev_conj_fr].
+      all: try(eapply IHϕ1; eauto; intros EL; apply NEL; apply in_app_iff; left; assumption).
+      all: try(eapply IHϕ2; eauto; intros EL; apply NEL; apply in_app_iff; right; assumption).
+    - inversion_clear EV; [constructor|apply ev_disj_tl|apply ev_disj_tr].
+      all: try(eapply IHϕ1; eauto; intros EL; apply NEL; apply in_app_iff; left; assumption).
+      all: try(eapply IHϕ2; eauto; intros EL; apply NEL; apply in_app_iff; right; assumption).
   }
-Admitted.
+Qed.
   
     
 
@@ -1842,8 +1871,6 @@ Section Algorithm1.
     destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
   Defined.
 
-  Print Assumptions algorithm1.
-  
   (* => 16 *)
 (*  Compute (proj1_sig (algorithm1 (x1))).
   Compute (proj1_sig (algorithm1 (x1 ⊕ x2 ⊕ x3 ⊕ x4 ⊕ x5))).
@@ -3159,7 +3186,7 @@ Section Algorithm3.
 
       Admitted.
         
-
+      (* list minus? *)
       Definition all_extensions_on (ξ : assignment) (vs : variables): assignments :=
         map (fun β => ξ ++ β) (all_assignments_on vs). 
 
