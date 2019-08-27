@@ -1105,8 +1105,6 @@ Proof.
       all: try(eapply IHϕ2; eauto; intros EL; apply NEL; apply in_app_iff; right; assumption).
   }
 Qed.
-  
-    
 
 
 (* TODO: move to Alg2. *)
@@ -2382,6 +2380,176 @@ Section Algorithm2.
 
 End Algorithm2.
 
+Section Algorithm2WithSimplify.
+
+  Section SimplifyInterface.
+
+    Variable simplify: formula -> formula.
+
+    Hypothesis H_simplify_respects_formula_size:
+      forall ϕ, formula_size (simplify ϕ) <= formula_size ϕ.
+
+    Hypothesis H_simplify_doesnt_change_set_of_variables:
+      forall ϕ, equi (leaves (simplify ϕ)) (leaves ϕ).
+
+    Hypothesis H_simplify_respects_formula_equivalence:
+      forall ϕ, equivalent ϕ (simplify ϕ).
+
+    
+    Lemma TODO: False.
+    Proof.
+      clear.
+    Admitted.
+    
+    Lemma l1:
+      forall ϕ x αs1, 
+        list_of_all_sat_assignments (simplify (ϕ [x ↦ T])) αs1 ->
+        list_of_all_sat_assignments (ϕ [x ↦ T]) αs1.        
+    Proof.
+      intros ? ? ? LA.
+      split; [ | split]; [destruct LA as [LA _]|destruct LA as [_ [LA _]]|destruct LA as [_ [_ LA]]].
+      - destruct LA.
+        split. auto.
+        admit.
+      - intros α EL.
+        specialize (LA α EL).
+        apply H_simplify_respects_formula_equivalence; assumption.
+      - intros α [SET SAT].
+        specialize (LA α); feed LA.
+        { split.
+          admit.
+          apply H_simplify_respects_formula_equivalence in SAT; assumption.
+        }
+        admit.
+          
+    Admitted.
+
+    Lemma l2:
+      forall ϕ x αs2, 
+        list_of_all_sat_assignments (simplify (ϕ [x ↦ F])) αs2 ->
+        list_of_all_sat_assignments (ϕ [x ↦ F]) αs2.
+    Proof.
+      admit.
+    Admitted.
+    
+    Definition algorithm2_simplify_interface:
+      forall (ϕ : formula), {n : nat | number_of_sat_assignments ϕ n}.
+    Proof.
+      apply size_recursion with formula_size; intros ϕ IHϕ. 
+      destruct (formula_size_dec ϕ) as [Zero|Pos].
+      { destruct (zero_size_formula_constant_dec ϕ Zero) as [Tr|Fl].
+        - exists 1; apply count5; assumption.
+        - exists 0; apply count6; assumption. } 
+      { assert (V := get_var _ Pos).
+        destruct V as [x IN]; clear Pos.
+        assert (IH1 := IHϕ (simplify (ϕ[x ↦ T]))); assert(IH2 := IHϕ (simplify(ϕ[x ↦ F]))); clear IHϕ.
+        feed IH1.
+        { apply Nat.le_lt_trans with (formula_size (ϕ [x ↦ T])).
+          apply H_simplify_respects_formula_size.
+          apply todo3; auto.
+        }
+        feed IH2.
+        { apply Nat.le_lt_trans with (formula_size (ϕ [x ↦ F])).
+          apply H_simplify_respects_formula_size.
+          apply todo5; auto.
+        }
+        destruct IH1 as [nl EQ1], IH2 as [nr EQ2].
+        exists (nl + nr).
+        destruct EQ1 as [αs1 [LAA1 LEN1]], EQ2 as [αs2 [LAA2 LEN2]].
+        exists (map (cons (x, true)) αs1 ++ map (cons (x,false)) αs2).
+        apply l1 in LAA1; apply l2 in LAA2.
+        split; [split; [ | split] | ].
+        { destruct LAA1 as [ND1 _], LAA2 as [ND2 _]. apply todo54; auto. }
+        { destruct LAA1 as [_ [SAT1 _]], LAA2 as [_ [SAT2 _]]; apply todo55; auto. }
+        { destruct LAA1 as [_ [_ SET1]], LAA2 as [_ [_ SET2]];apply todo56; assumption. } 
+        { rewrite app_length, map_length, map_length, <- LEN1, <- LEN2; reflexivity. } 
+      }
+      
+    Defined.
+    
+  End SimplifyInterface.
+
+  Section SimplifyFunction.
+
+
+    Definition simplify (ϕ : formula) :=
+      match ϕ with
+      | ¬ T => F
+      | ¬ F => T
+      | T ∧ ϕ => ϕ
+      | F ∧ T => F
+      | F ∧ F => F
+      | F ∨ ϕ => ϕ
+      | T ∨ T => T
+      | T ∨ F => T
+      | ϕ => ϕ
+      end.
+
+(*
+      Definition weak_simple (ϕ : formula) :=
+        match ϕ with
+        | ¬ T => False
+        | _ => True
+        end.
+          
+    Definition simplify (ϕ : formula): {ψ | formula_size ψ <= formula_size ϕ
+                                            /\ equi (leaves ψ) (leaves ϕ)
+                                            /\ equivalent ϕ ψ /\
+                                            weak_simple ψ}.
+    Proof.
+      induction ϕ.
+      { exists F. exfalso; apply TODO. }
+      { exists T. exfalso; apply TODO. }
+      { exists [|v|]. exfalso; apply TODO. }
+      { destruct IHϕ as [ψ [SIZE [EQU [EQ W]]]].
+        exists (¬ ψ). exfalso; apply TODO. }
+      { destruct IHϕ1 as [ψ1 [SIZE1 [EQU1 [EQ1 W1]]]].
+        destruct IHϕ2 as [ψ2 [SIZE2 [EQU2 [EQ2 W2]]]].
+        exists (ψ1 ∧ ψ2). exfalso; apply TODO. }
+      { destruct IHϕ1 as [ψ1 [SIZE1 [EQU1 [EQ1 W1]]]].
+        destruct IHϕ2 as [ψ2 [SIZE2 [EQU2 [EQ2 W2]]]].
+        exists (ψ1 ∨ ψ2). exfalso; apply TODO. }
+      Defined.
+ *)
+      
+      
+
+    Lemma L1:
+      forall ϕ, formula_size (simplify ϕ) <= formula_size ϕ.
+    Proof.
+      exfalso; apply TODO.
+    Admitted.
+
+    Lemma L2:
+      forall ϕ, equi (leaves (simplify ϕ)) (leaves ϕ).
+    Proof.
+      exfalso; apply TODO.
+    Admitted.
+
+    Lemma L3:
+      forall ϕ, equivalent ϕ (simplify ϕ).
+    Proof.
+      exfalso; apply TODO.
+    Admitted. 
+    
+
+  End SimplifyFunction.
+
+  (* 
+  Definition algorithm2_simplify :=
+    algorithm2_simplify_interface
+      (fun ϕ => proj1_sig (simplify ϕ))
+      (fun ϕ => proj1 (proj2_sig (simplify ϕ)))
+      (fun ϕ => proj1 (proj2 (proj2_sig (simplify ϕ))))
+      (fun ϕ => proj1 (proj2 (proj2 (proj2_sig (simplify ϕ))))). *)
+
+   Definition algorithm2_simplify :=
+    algorithm2_simplify_interface simplify L1 L2 L3.
+
+  Compute (proj1_sig (algorithm2_simplify (fold_left (fun ϕ x => ϕ ⊕ [|V x|]) ([1;2;3;4]) F))).
+  
+End Algorithm2WithSimplify.
+
 (** * "Bonus" 1: Counting k-Cliques. *)
 (** This "bonus" gives nothing significant. The only reason I include this section is 
     to see the performance of the algorithms on real formulas. *)
@@ -2511,9 +2679,23 @@ Section kCliques.
 
   Definition counting_k_cliques (k : nat) (g : graph) :=
     proj1_sig (algorithm2 (transform k g)).
+
+  Definition counting_k_cliques' (k : nat) (g : graph) :=
+    proj1_sig (algorithm2_simplify (transform k g)).
+
+  Definition graph_triangle :=
+    {| vtcs := [1;2;3];
+       edges v1 v2 :=
+         match v1, v2 with
+         | 1,2 | 2,1 => true
+         | 1,3 | 3,1 => true
+         | 2,3 | 3,2 => true
+         | _, _ => false
+         end;
+    |}.
   
   Definition graph1 :=
-    {| vtcs := [1;2;3;4;5];
+    {| vtcs := [1;2;3;4];
        edges v1 v2 :=
          match v1, v2 with
          | 1,2 | 2,1 => true
@@ -2552,7 +2734,19 @@ Section kCliques.
 
     
     (* Compute ( (transform 3 graph_pentagram)). *)
-    (* Compute (counting_k_cliques 3 graph_pentagram). *)
+    Compute (counting_k_cliques 3 graph_triangle).
+    Compute (counting_k_cliques' 3 graph_triangle).
+
+    
+    Compute (counting_k_cliques' 3 graph1).
+  (*  Compute (counting_k_cliques 3 graph1).
+
+    Compute (counting_k_cliques 3 graph_pentagram).
+    Compute (counting_k_cliques' 3 graph_pentagram). *)
+        
+    
+      
+ 
   
     
 End kCliques.
