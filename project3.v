@@ -483,7 +483,7 @@ Defined. (* Todo: Qed? *)
               else x :: dupfree_comp xs
     end.
 
-  Lemma admit_todo7:
+(*  Lemma admit_todo7:
     forall (x : X) (xs : list X),
       x el xs ->
       x nel dupfree_comp xs ->
@@ -491,18 +491,27 @@ Defined. (* Todo: Qed? *)
   Proof.
     intros ? ? EL NEL.
     
-  Admitted.
+  Admitted. *)
 
   Lemma admit_75:
     forall (xs ys : list X),
       dupfree_rel xs ->
       dupfree_rel ys ->
       length xs > length ys ->
-      exists x, x el xs /\ forall y, y el ys /\ ~ R x y. 
+      exists x, x el xs /\ forall y, y el ys -> ~ R x y. 
   Proof.
-    intros ? ? [ND1 DF1] [ND2 DF2] LEN.
-    
-    
+    intros ? ? [ND1 DF1] [ND2 DF2] LT.
+    assert(EX: exists n, length xs <= n). admit.
+    destruct EX as [n LEN].
+    generalize dependent ys; generalize dependent xs.
+    induction n; intros; [admit| ].
+    apply Nat.le_succ_r in LEN; destruct LEN as [LEN|LEN].
+    - admit. 
+    - 
+      (* feed_n 3 IHys. admit. admit. admit. *)
+      
+      
+      
   Admitted.
       
 End Sec1.
@@ -807,7 +816,7 @@ Qed.
 Definition equiv_assignments (vs : variables) (α1 α2 : assignment) :=
   forall (v : variable),
     v el vs ->
-    exists (b : bool), v / α1 ↦ b /\ v / α2 ↦ b.
+    forall b, v / α1 ↦ b <-> v / α2 ↦ b.
 
 Section Properties.
 
@@ -818,47 +827,56 @@ Section Properties.
       equiv_assignments vs ((v,b)::α1) ((v,b)::α2) ->
       equiv_assignments vs_sub α1 α2.
   Proof.
-    intros ? ? v ? ? ? INCL NEL EQU x EL.
-    decide (x = v) as [EQ|NEQ]; [subst;exfalso;auto| ].
-    specialize (INCL _ EL).
-    specialize (EQU _ INCL); destruct EQU as [c [EV1 EV2]].
-    exists c; split. 
-    inversion EV1; subst; [exfalso;auto|assumption].
-    inversion EV2; subst; [exfalso;auto|assumption].
+    intros ? ? v ? ? ? INCL NEL EQU x EL b.
+    decide (x = v) as [EQ|NEQ]; [subst;exfalso;auto| ]; split; intros EV;
+      specialize (INCL _ EL); specialize (EQU _ INCL b);
+        [destruct EQU as [EQU _] | destruct EQU as [_ EQU]].
+    all: feed EQU; auto; inversion EQU; subst; [exfalso | ]; auto.
   Qed.
-  
 
   Lemma todo53:
     forall (α_upd α : assignment) (v : variable) (b : bool),
-      v nel vars_in α_upd -> 
-      v / α_upd ++ α ↦ b ->
-      v / α ↦ b.
+      v nel vars_in α_upd ->
+      v / α ↦ b <-> v / α_upd ++ α ↦ b.
   Proof.
-    intros ? ? ? ? NEL EV.
-    induction α_upd.
+    intros ? ? ? ? NEL.
+    induction α_upd; split; intros EV.
     { simpl in EV; assumption. }
+    { simpl in EV; assumption. }
+    { destruct a as [vu bu]; simpl; constructor.
+      { intros EQ; subst vu; apply NEL; left; reflexivity. }
+      { apply IHα_upd; auto.
+        intros EL; apply NEL; clear NEL; right; assumption. }
+    } 
     { destruct a as [vu bu].
       assert(NEQ:= nel_cons_neq _ _ _ NEL).
       simpl in EV; inversion EV; subst; [exfalso;auto| ].
       clear EV H4; rename H5 into EV.
-      specialize (IHα_upd (nel_cons _ _ _ NEL) EV).
-      assumption.
+      specialize (IHα_upd (nel_cons _ _ _ NEL)); destruct IHα_upd as [_ IH];
+        specialize (IH EV); auto.
     } 
   Qed.
-    
+
+
   Lemma equiv_assign_disj_update:
     forall (vs : variables) (α_upd α1 α2 : assignment),
       disj_sets vs (vars_in α_upd) ->
       equiv_assignments vs (α_upd ++ α1) (α_upd ++ α2) ->
       equiv_assignments vs α1 α2.
   Proof.
-    intros ? ? ? ? DISJ EQU ? EL.
-    specialize (EQU v EL).
-    destruct EQU as [b [EV1 EV2]].
+    intros ? ? ? ? DISJ EQU ? EL ?.
+    specialize (EQU v EL b).
+    destruct EQU as [EQU1 EQU2].    
     specialize (DISJ v); destruct DISJ as [DISJ _]; specialize (DISJ EL).
-    exists b; split; eapply todo53; eauto 2.
-  Qed.
- 
+    split; intros EV. 
+    { eapply todo53; eauto.
+      apply EQU1.
+      apply todo53; auto. }
+    { eapply todo53; eauto.
+      apply EQU2.
+      apply todo53; auto. }
+  Qed.      
+    
   Lemma equiv_nodup:
     forall (vs : variables) (α β : assignment),
       equiv_assignments vs α β <->
@@ -868,19 +886,20 @@ Section Properties.
     { specialize (EQ v); feed EQ; apply nodup_In in EL; auto. }
     { specialize (EQ v); feed EQ; auto. apply nodup_In; eauto. } 
   Qed.
-    
+  
+  
   Lemma todo27:
     forall (vs vs_sub : variables) (α1 α2 : assignment),
       incl vs_sub vs ->
       equiv_assignments vs α1 α2 -> 
       equiv_assignments vs_sub α1 α2.
   Proof.
-    intros ϕ x β1 β2 NEQ EQU v EL.
+    intros ϕ x β1 β2 NEQ EQU v EL b.
     specialize (NEQ v EL).
-    specialize (EQU _ NEQ).
-    destruct EQU as [b [EV1 EV2]].
-    exists b; split; assumption.
-  Qed.  
+    specialize (EQU _ NEQ b).
+    destruct EQU as [EV1 EV2].
+    split; auto.
+  Qed.
   
   Lemma todo41:
     forall (α1 α2 : assignment) (vs : list variable) (a : variable) (b : bool),
@@ -888,24 +907,23 @@ Section Properties.
       equiv_assignments (a::vs) ((a,b)::α1) ((a,b)::α2) ->
       equiv_assignments vs α1 α2.
   Proof.
-    intros α1 α2 ? ? ? NEL EQU v EL.
-    decide (v = a) as [EQ|NEQ]; subst.
-    { exfalso; auto. }
-    { specialize (EQU v); feed EQU; [right;auto| ].
-      destruct EQU as [b' [EV1 EV2]].
-      exists b'; split; [inversion EV1|inversion EV2]; subst;
-        try assumption; exfalso; auto.
-    }
+    intros α1 α2 ? ? ? NEL EQU v EL ?.
+    decide (v = a) as [EQ|NEQ]; subst; split; intros EV.
+    1-2: exfalso; auto. 
+    1: specialize (EQU v (or_intror EL) b0); destruct EQU as [EQU _].
+    2: specialize (EQU v (or_intror EL) b0); destruct EQU as [_ EQU ].
+    all: feed EQU; [right;auto| ].
+    all: inversion EQU; subst; [exfalso | ]; auto.
   Qed.
-
+ 
   Lemma todo42:
     forall (α1 α2 : assignment) (vs : variables) (a : variable) (b : bool),
       ~ equiv_assignments (a :: vs) ((a, b)::α1) ((a, negb b)::α2).
   Proof.
     intros ? ? ? ? ? EQ.
     specialize (EQ a); feed EQ; [left; auto | ].
-    destruct b; destruct EQ as [b [EV1 EV2]];
-      destruct b; (inversion_clear EV1; fail || inversion_clear EV2); auto. 
+    specialize (EQ b); destruct EQ as [EQU _].
+    destruct b; feed EQU; auto; inversion_clear EQU; auto.
   Qed.
 
 End Properties.
@@ -1049,10 +1067,7 @@ Proof.
   - inversion_clear EV; constructor.
   - inversion_clear EV; constructor.
   - inversion_clear EV.
-    specialize (EQ v); feed EQ; [left;reflexivity| ].
-    destruct EQ as [b' [EV1 EV2]].
-    assert(EQ := todo2 _ _ _ _ H EV1); subst b'.
-    constructor; assumption.
+    constructor; apply EQ; [left | ]; auto.
   - apply IHϕ with (b := negb b) in EQ.
     + constructor; assumption.
     + inversion_clear EV; assumption.
@@ -1073,7 +1088,6 @@ Proof.
     + apply ev_disj_tl; eauto.
     + apply ev_disj_tr; eauto.
 Qed.
-
 
 Lemma admit_todo13:
   forall (ϕ : formula) (α : assignment) (v : variable) (b a : bool),
@@ -1724,25 +1738,30 @@ Section ListOfAllSatAssignment.
       
       
       rewrite <-N1, <-N2 in LT; clear N1 N2.
-      eapply admit_75 with (R := equiv_assignments (leaves ϕ)) in LT; eauto.
-      destruct LT as [α [EL ALL]].
-      specialize (SAT2 α EL); destruct SAT2 as [SET2 SAT2].
-            
-      specialize (AllSAT1 α).
-      feed AllSAT1.
-      split; auto.
-      
-
-      specialize (AllSAT2 α).
-      
-      admit.
-      admit.
-      admit.
-      admit.
-      admit.
-      admit.
-
+      eapply admit_75 with
+          (R := fun α β =>
+                  sets_all_variables ϕ α ->
+                  sets_all_variables ϕ β ->
+                  equiv_assignments (leaves ϕ) α β) in LT; eauto.
+      { destruct LT as [α [EL ALL]].
+        specialize (SAT2 α EL); destruct SAT2 as [SET2 SAT2].
+        specialize (AllSAT1 α (conj SET2 SAT2)).
+        destruct AllSAT1 as [β [EQU ELβ]].
+        specialize (ALL β ELβ).
+        auto.
+      }
+      { admit. }
+      { clear; intros α SET _; intros v EL.
+        specialize (SET _ EL).
+        admit.
+      } 
+      { admit. }
+      { split; eauto.
+        intros. admit. }
+      { admit. } 
+        
     }
+
     { admit.
     }
     
@@ -1838,11 +1857,15 @@ Section Algorithm1.
       destruct IHvs as [β [EQU IN]].
       destruct (todo22 α a) as [[[EL MAP]|[NEL2 NMAP]]|[EL MAP]].
       { exists ((a,true)::β); split.
-        { intros v EL2; destruct EL2 as [EQ|EL2]; subst.
-          - exists true; split; auto. 
-          - specialize (EQU v EL2); destruct EQU as [b [EV1 EV2]].
-            exists b; decide (a = v) as [EQ|NEQ]; [ |split;auto]. 
-            subst; split; [assumption| assert(H := todo2 _ _ _ _ EV1 MAP); subst; constructor].
+        { intros v EL2; destruct EL2 as [EQ|EL2]; subst; intros b; split; intros EV.
+          - apply (todo2 _ _ _ _ MAP) in EV; subst; constructor.
+          - inversion EV; subst; [ |exfalso]; auto.
+          - decide (a = v) as [EQ|NEQ]; [subst | ].
+            apply EQU in MAP; apply EQU in EV; auto.
+            apply (todo2 _ _ _ _ MAP) in EV; subst; constructor.
+            constructor; auto; apply EQU; auto.
+          - admit.
+
         } 
         { simpl; apply in_app_iff; right.
           apply in_map_iff; exists β; split; auto.
@@ -1851,17 +1874,14 @@ Section Algorithm1.
       { exfalso; apply NEL2; apply INCL; left; auto. } 
       { exists ((a,false)::β); split.
         { intros v EL2; destruct EL2 as [EQ|EL2]; subst.
-          - exists false; split; auto. 
-          - specialize (EQU v EL2); destruct EQU as [b [EV1 EV2]].
-            exists b; decide (a = v) as [EQ|NEQ]; [ |split;auto]. 
-            subst; split; [assumption| assert(H := todo2 _ _ _ _ EV1 MAP); subst; constructor].
+          admit. admit.
         } 
         { simpl; apply in_app_iff; left.
           apply in_map_iff; exists β; split; auto.
         } 
       }      
     }
-  Qed.
+  Admitted.
   
   Definition compute_formula (ϕ : formula) (α : assignment) (SET : sets_all_variables ϕ α):
     { b : bool | formula_eval ϕ α b }.
@@ -1951,10 +1971,11 @@ Section Algorithm1.
       } 
       { intros α [SETS SAT].
         assert(H := all_assignments_in_this_list vars α).
-        feed H. { eapply incl_trans; eauto; apply incl_nodup. }          
+        feed H; [eapply incl_trans; eauto; apply incl_nodup| ]. 
         destruct H as [β [EQ EL]].
-        exists β; repeat split.
-        - apply equiv_nodup; assumption.
+        exists β; split.
+        - clear EL; intros ? EL b; split; intros EV.
+          all: apply EQ; auto; apply nodup_In; auto.
         - apply filter_In; split; [assumption | ].
           unfold formula_sat_filter; destruct (sets_all_variables_dec ϕ β) as [S|S].
           + apply equiv_nodup in EQ.
@@ -1962,7 +1983,7 @@ Section Algorithm1.
             apply admit_equiv_sat with (β := β) in SAT; [ | assumption].
             eapply formula_eval_inj; eauto 2.
           + exfalso; apply S.
-            apply todo32; assumption.
+            apply todo32; assumption. 
       }
     }
     destruct EX as [αs AS]; exists (length αs); exists αs; split; auto.
@@ -2247,7 +2268,7 @@ Section Algorithm2.
           [subst; apply (todo2 _ _ _ _ H) in M; subst| ]; auto. }
       { simpl in *; decide (x = v) as [EQ|NEQ]; [subst; inversion_clear EV| ]; auto. }
     Qed. 
-
+  
     Lemma todo77:
       forall (ϕ : formula) (x : variable) (α : assignment) (b : bool),
         x / α ↦ false ->
@@ -2333,21 +2354,15 @@ Section Algorithm2.
           apply todo28 with (vs_sub := leaves (ϕ [x ↦ T])) in NEQ;
             [assumption | apply todo57 | apply todo12].
         }
-        { specialize (NEQ x).
-          feed NEQ; [assumption | ].
-          destruct NEQ as [b [ EV1 EV2]].
-          apply in_map_iff in EL1; apply in_map_iff in EL2.
+        { apply in_map_iff in EL1; apply in_map_iff in EL2.
           destruct EL1 as [α1_tl [EQ1 _]], EL2 as [α2_tl [EQ2 _]]; subst α1 α2.
-          inversion EV1; subst; auto.
-          inversion EV2; subst; auto.
+          specialize (NEQ x H_leaf true); destruct NEQ as [NEQ _]; feed NEQ; auto.
+          inversion_clear NEQ; auto.
         }
-        { specialize (NEQ x).
-          feed NEQ; [assumption | ].
-          destruct NEQ as [b [ EV1 EV2]].
-          apply in_map_iff in EL1; apply in_map_iff in EL2.
+        { apply in_map_iff in EL1; apply in_map_iff in EL2.
           destruct EL1 as [α1_tl [EQ1 _]], EL2 as [α2_tl [EQ2 _]]; subst α1 α2.
-          inversion EV1; subst; auto.
-          inversion EV2; subst; auto.
+          specialize (NEQ x H_leaf true); destruct NEQ as [_ NEQ]; feed NEQ; auto.
+          inversion_clear NEQ; auto.
         }
         { apply in_map_iff in EL1; destruct EL1 as [β1 [EQ1 EL1]].
           apply in_map_iff in EL2; destruct EL2 as [β2 [EQ2 EL2]]; subst α1 α2.
@@ -2423,13 +2438,12 @@ Section Algorithm2.
         destruct SET1 as [β [EQ EL]].
         inversion_clear H0. 
         exists ((x,true)::β); split.
-        { intros v ELl.
-          decide (v = x) as [E|NEQ]; [subst | ]. 
-          exists true; split; [assumption| constructor].
-          specialize (EQ v).
-          feed EQ; [apply todo73;auto| ].
-          destruct EQ as [b [EV1 EV2]].
-          exists b; split; [ |constructor]; assumption. 
+        { intros v ELl b.
+          decide (v = x) as [E|NEQ]; [subst | ]; split; intros EV.
+          - apply (todo2 _ _ _ _ H) in EV; subst; constructor.
+          - inversion_clear EV; [ | exfalso]; auto.
+          - constructor; [assumption| ]; apply EQ; [ | assumption]; auto using todo73.
+          - inversion_clear EV; [assumption| ]; apply EQ; auto using todo73.
         }
         { apply in_app_iff; left.
           apply in_map_iff; exists β; easy.
@@ -2440,16 +2454,16 @@ Section Algorithm2.
         destruct SET2 as [β [EQ EL]].
         inversion_clear H0; inversion_clear H; simpl in H0.
         exists ((x,false)::β); split.
-        { intros v ELl.
-          decide (v = x) as [E|NEQ]; [subst | ].
-          exists false; split; [assumption| constructor].
-          specialize (EQ v).
-          feed EQ; [apply todo74;auto| ].
-          destruct EQ as [b [EV1 EV2]].
-          exists b; split; [ |constructor]; assumption. 
+        { intros v ELl b.
+          decide (v = x) as [E|NEQ]; [subst | ]; split; intros EV.
+          - apply (todo2 _ _ _ _ H0) in EV; subst; constructor.
+          - inversion_clear EV; [ | exfalso]; auto.
+          - constructor; [assumption| ]; apply EQ; [ | assumption]; auto using todo74.
+          - inversion_clear EV; [assumption| ]; apply EQ; auto using todo74.
         }
-        apply in_app_iff; right.
-        apply in_map_iff; exists β; easy.
+        { apply in_app_iff; right.
+          apply in_map_iff; exists β; easy.
+        }
       } 
     Qed. 
     
