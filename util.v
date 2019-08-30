@@ -511,17 +511,27 @@ Defined. (* Todo: Qed? *)
       length xs > length ys ->
       exists x, x el xs /\ forall y, y el ys -> ~ R x y. 
   Proof.
-    intros ? ? [ND1 DF1] [ND2 DF2] LT.
+    intros xs ys; generalize dependent xs; induction ys; intros ? [ND1 DF1] [ND2 DF2] LT.
+    admit.
+
+    destruct xs as [ | x xs]; [simpl in LT;admit | ].
+    
+    simpl in LT.
+    specialize (IHys xs). feed_n 3 IHys. admit. admit. admit.
+    
+    
+    
+    (* 
     assert(EX: exists n, length xs <= n). admit.
     destruct EX as [n LEN].
     generalize dependent ys; generalize dependent xs.
     induction n; intros; [admit| ].
     apply Nat.le_succ_r in LEN; destruct LEN as [LEN|LEN].
-    - admit. 
+    - apply IHn; auto.
     - 
-      (* feed_n 3 IHys. admit. admit. admit. *)
-      
-      
+      specialize (IHn xs). feed_n 3 IHn. admit. admit. admit.
+     specialize (IHn ys). feed_n 3
+     *)
       
   Admitted.
       

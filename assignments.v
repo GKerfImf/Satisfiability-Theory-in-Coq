@@ -73,7 +73,8 @@ Section Lemmas.
   Section PropertiesOfAssignments.
     
     (* TODO: comment *)
-    Global Instance eq_var_dec: eq_dec variable.
+    Global Instance eq_var_dec:
+      eq_dec variable.
     Proof.
       intros v1 v2.
       destruct v1 as [n], v2 as [m].
@@ -84,8 +85,10 @@ Section Lemmas.
 
 
     (* admit_ *)
-    Global Instance eq_assignment_dec : eq_dec assignment.
+    Global Instance eq_assignment_dec :
+      eq_dec assignment.
     Proof.
+      intros x y. 
     Admitted.
 
 

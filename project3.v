@@ -934,7 +934,7 @@ Section kCliques.
 
     
     (* Compute ( (transform 3 graph_pentagram)). *)
-    Compute (counting_k_cliques 3 graph_triangle).
+  (*  Compute (counting_k_cliques 3 graph_triangle). *)
 (*  Compute (counting_k_cliques 3 graph1).
 
     Compute (counting_k_cliques 3 graph_pentagram).
@@ -1573,7 +1573,7 @@ Section Algorithm3.
             { ξ | certificate1 ϕ ξ }.
       Proof.
         intros ? ? DNF ? MON SAT.
-
+ 
       Admitted.
         
       (* list minus? *)

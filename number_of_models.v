@@ -105,37 +105,34 @@ Section ListOfAllSatAssignment.
     decide (n1 = n2) as [EQ|NEQ]; [auto|exfalso].
     destruct N1 as [αs1 [[[ND1 DF1] [SAT1 AllSAT1]] N1]], N2 as [αs2 [[[ND2 DF2] [SAT2 AllSAT2]] N2]].
     apply not_eq in NEQ; destruct NEQ as [LT|GT].
-    { 
-      
-      
-      rewrite <-N1, <-N2 in LT; clear N1 N2.
-      eapply admit_75 with
-          (R := fun α β =>
-                  sets_all_variables ϕ α ->
-                  sets_all_variables ϕ β ->
-                  equiv_assignments (leaves ϕ) α β) in LT; eauto.
+    { rewrite <-N1, <-N2 in LT; clear N1 N2.
+      eapply admit_75 with (R := equiv_assignments (leaves ϕ)) in LT; eauto.
       { destruct LT as [α [EL ALL]].
         specialize (SAT2 α EL); destruct SAT2 as [SET2 SAT2].
         specialize (AllSAT1 α (conj SET2 SAT2)).
         destruct AllSAT1 as [β [EQU ELβ]].
-        specialize (ALL β ELβ).
-        auto.
+        specialize (ALL β ELβ); auto. 
       }
       { admit. }
-      { clear; intros α SET _; intros v EL.
-        specialize (SET _ EL).
-        admit.
-      } 
+      { apply equiv_assignments_refl. }
+      { apply equiv_assignments_sym. }
+      { split; eauto. }
+      { split; eauto. }
+    }
+    { rewrite <-N1, <-N2 in GT; clear N1 N2.
+      eapply admit_75 with (R := equiv_assignments (leaves ϕ)) in GT; eauto.
+      { destruct GT as [α [EL ALL]].
+        specialize (SAT1 α EL); destruct SAT1 as [SET1 SAT1].
+        specialize (AllSAT2 α (conj SET1 SAT1)).
+        destruct AllSAT2 as [β [EQU ELβ]].
+        specialize (ALL β ELβ); auto. 
+      }
       { admit. }
-      { split; eauto.
-        intros. admit. }
-      { admit. } 
-        
+      { apply equiv_assignments_refl. }
+      { apply equiv_assignments_sym. }
+      { split; eauto. }
+      { split; eauto. }
     }
-
-    { admit.
-    }
-    
   Admitted.
 
   Print Assumptions admit_todo70.
