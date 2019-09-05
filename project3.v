@@ -836,8 +836,8 @@ Section kCliques.
              (lt_pairs (range 0 (k-1))))
           T in 
 
-    (* In order to count each clique only once, I introduce an ordering
-       on the vertices. TODO *) 
+    (* In order to count each clique only once, we need to introduce an ordering
+       on the vertices. Otherwise TODO  *) 
     let r4 : formula :=
         fold_left
           Conj 
@@ -870,6 +870,18 @@ Section kCliques.
 
   Definition counting_k_cliques (k : nat) (g : graph) :=
     proj1_sig (algorithm2 (transform k g)).
+
+  
+  Definition graph_triangle :=
+    {| vtcs := [1;2;3];
+       edges v1 v2 :=
+         match v1, v2 with
+         | 1,2 | 2,1 => true
+         | 1,3 | 3,1 => true
+         | 2,3 | 3,2 => true
+         | _, _ => false
+         end;
+    |}.
   
   Definition graph1 :=
     {| vtcs := [1;2;3;4];
@@ -883,16 +895,7 @@ Section kCliques.
          end;
     |}.
   
-  Definition graph_triangle :=
-    {| vtcs := [1;2;3];
-       edges v1 v2 :=
-         match v1, v2 with
-         | 1,2 | 2,1 => true
-         | 1,3 | 3,1 => true
-         | 2,3 | 3,2 => true
-         | _, _ => false
-         end;
-    |}.
+
 
   Definition graph_4_clique :=
     {| vtcs := [1;2;3;4];
@@ -934,14 +937,14 @@ Section kCliques.
 
     
     (* Compute ( (transform 3 graph_pentagram)). *)
-  (*  Compute (counting_k_cliques 3 graph_triangle). *)
-(*  Compute (counting_k_cliques 3 graph1).
+    (*  Compute (counting_k_cliques 3 graph_triangle). *)
+    (* Compute (counting_k_cliques 4 graph_4_clique). *)
 
-    Compute (counting_k_cliques 3 graph_pentagram).
+(*   Compute (counting_k_cliques 3 graph_pentagram).
     Compute (counting_k_cliques' 3 graph_pentagram). *)
-        
     
-      
+    
+    
  
   
     

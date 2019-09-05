@@ -35,66 +35,7 @@ Section ListOfAllSatAssignment.
     exists (αs : assignments),
       list_of_all_sat_assignments ϕ αs /\
       length αs = n.
-
-  (* Fail! *)
-(*  Lemma kek1:
-    list_of_all_sat_assignments (T ∨ [|V 0|]) ([[(V 0, true)];[(V 0, false)]]).
-  Proof.
-    repeat split.
-    - apply NoDup_cons. intros EL. apply singl_in in EL. inversion EL.
-      apply NoDup_cons. intros EL. destruct EL.
-      constructor.
-    - intros. destruct H as [EQ1|[EQ1|EL1]]; destruct H0 as [EQ2|[EQ2|EL2]]; subst.
-      all: try(exfalso;auto;fail).
-      all: intros EQ; simpl in *.
-      all: specialize (EQ (V 0)); feed EQ; [left; reflexivity| ].
-      all: destruct EQ as [b [EV1 EV2]].
-      all: inversion EV1; subst; inversion EV2; subst; auto.
-    - intros α [EQ|[EQ|F]]; subst; constructor; constructor.
-    - intros α [SET SAT].
-      simpl.
-      specialize (SET (V 0)); feed SET; [left; auto| ].
-      destruct (mapsto_dec _ _ SET).
-      + exists ([(V 0, true)]); split.
-        intros v EL; apply singl_in in EL; subst.
-        exists true; split; auto.
-        left; reflexivity.
-      + exists ([(V 0, false)]); split.
-        intros v EL; apply singl_in in EL; subst.
-        exists false; split; auto.
-        right; left; reflexivity.
-  Qed.
-  
-  Lemma kek2:
-    list_of_all_sat_assignments (T ∨ [|V 0|]) ([[(V 0, true)];[(V 0, false)];[]]).
-  Proof.
-    repeat split.
-    - apply NoDup_cons. intros EL. destruct EL as [EQ|[EQ|F]]; (inversion EQ || auto).
-      apply NoDup_cons. intros EL. apply singl_in in EL. inversion EL.
-      apply NoDup_cons. intros EL. destruct EL.
-      constructor.
-    - intros. destruct H as [EQ1|[EQ1|[EQ1|EL1]]]; destruct H0 as [EQ2|[EQ2|[EQ2|EL2]]]; subst.
-      all: try(exfalso;auto;fail).
-      all: intros EQ; simpl in *.
-      all: specialize (EQ (V 0)); feed EQ; [left; reflexivity| ].
-      all: destruct EQ as [b [EV1 EV2]].
-      all: inversion EV1; subst; inversion EV2; subst; auto.
-    - intros α [EQ|[EQ|F]]; subst; constructor; constructor.
-    - intros α [SET SAT].
-      simpl.
-      specialize (SET (V 0)); feed SET; [left; auto| ].
-      destruct (mapsto_dec _ _ SET).
-      + exists ([(V 0, true)]); split.
-        intros v EL; apply singl_in in EL; subst.
-        exists true; split; auto.
-        left; reflexivity.
-      + exists ([(V 0, false)]); split.
-        intros v EL; apply singl_in in EL; subst.
-        exists false; split; auto.
-        right; left; reflexivity.
-  Qed.
-*)  
-
+    
   Theorem admit_todo70:
     forall (ϕ : formula) (n1 n2 : nat),
       number_of_sat_assignments ϕ n1 ->
@@ -106,34 +47,36 @@ Section ListOfAllSatAssignment.
     destruct N1 as [αs1 [[[ND1 DF1] [SAT1 AllSAT1]] N1]], N2 as [αs2 [[[ND2 DF2] [SAT2 AllSAT2]] N2]].
     apply not_eq in NEQ; destruct NEQ as [LT|GT].
     { rewrite <-N1, <-N2 in LT; clear N1 N2.
-      eapply admit_75 with (R := equiv_assignments (leaves ϕ)) in LT; eauto.
+      eapply anti_pigeonhole with (R := equiv_assignments (leaves ϕ)) in LT; eauto.
       { destruct LT as [α [EL ALL]].
         specialize (SAT2 α EL); destruct SAT2 as [SET2 SAT2].
         specialize (AllSAT1 α (conj SET2 SAT2)).
         destruct AllSAT1 as [β [EQU ELβ]].
         specialize (ALL β ELβ); auto. 
       }
-      { admit. }
-      { apply equiv_assignments_refl. }
+      { apply todo107. }
+      { apply todo108. } 
       { apply equiv_assignments_sym. }
+      { apply equiv_assignments_trans. }
       { split; eauto. }
       { split; eauto. }
     }
     { rewrite <-N1, <-N2 in GT; clear N1 N2.
-      eapply admit_75 with (R := equiv_assignments (leaves ϕ)) in GT; eauto.
+      eapply anti_pigeonhole with (R := equiv_assignments (leaves ϕ)) in GT; eauto.
       { destruct GT as [α [EL ALL]].
         specialize (SAT1 α EL); destruct SAT1 as [SET1 SAT1].
         specialize (AllSAT2 α (conj SET1 SAT1)).
         destruct AllSAT2 as [β [EQU ELβ]].
         specialize (ALL β ELβ); auto. 
       }
-      { admit. }
-      { apply equiv_assignments_refl. }
+      { apply todo107. }
+      { apply todo108. } 
       { apply equiv_assignments_sym. }
+      { apply equiv_assignments_trans. }
       { split; eauto. }
       { split; eauto. }
     }
-  Admitted.
+  Qed.
 
   Print Assumptions admit_todo70.
   

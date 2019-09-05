@@ -347,9 +347,14 @@ Section Sec1.
   
   Variable R : X -> X -> Prop.
 
+  Hypothesis R_dec : forall x y, dec (R x y).
+  
   Hypothesis R_refl: forall x, R x x.
   Hypothesis R_sym: forall x y, R x y -> R y x.
+  Hypothesis R_trans: forall x y z, R x y -> R y z -> R x z.
 
+
+  
   Fixpoint mem_rel (x : X) (xs : list X): Prop :=
     match xs with
     | [] => False
@@ -494,47 +499,244 @@ Defined. (* Todo: Qed? *)
               else x :: dupfree_comp xs
     end.
 
-(*  Lemma admit_todo7:
-    forall (x : X) (xs : list X),
-      x el xs ->
-      x nel dupfree_comp xs ->
-      exists y, R x y /\ y el dupfree_comp xs. 
-  Proof.
-    intros ? ? EL NEL.
-    
-  Admitted. *)
 
-  Lemma admit_75:
+  Lemma dec_todo_h:
+    forall (x : X) (ys : list X),
+      {forall y, y el ys -> ~ R x y} +
+      {exists y, y el ys /\ R x y }.
+  Proof.
+    intros; induction ys.
+    - left; intros ? EL; destruct EL.
+    - destruct IHys as [IH|IH].
+      + decide (R x a) as [Rxa|NRxa].
+        * right; exists a; split; [left| ]; auto.
+        * left; intros ? EL; destruct EL as [EQ|EL]; [subst | ]; auto.
+      + right; destruct IH as [y [EL Rxy]].
+        exists y; split; [right | ]; auto.
+  Qed.
+        
+  Lemma dec_todo:
+    forall (xs ys : list X),
+      {exists x, x el xs /\ forall y, y el ys -> ~ R x y} +
+      {forall x, x el xs -> exists y, y el ys /\ R x y}.
+  Proof.
+    intros; induction xs.
+    - right; intros x EL; destruct EL.
+    - destruct IHxs as [IH|IH].
+      + destruct (dec_todo_h a ys) as [D|D].
+        * left; exists a; split; [left | ]; auto.
+        * left; destruct IH as [x [EL IH]]; clear D.
+          exists x; split; [right | ]; auto.
+      + destruct (dec_todo_h a ys) as [D|D].
+        * left; exists a; split; [left | ]; auto.
+        * right; intros x [EQ|EL]; subst; auto.
+  Qed.
+
+
+  
+  Let injective_relation_on (R : X -> X -> Prop) (xs ys : list X) :=
+    forall x1 x2 y,
+      x1 el xs -> x2 el xs -> y el ys -> 
+      R x1 y -> R x2 y ->
+      x1 = x2.
+
+  Let injective_function_on (f : X -> X) (xs : list X) :=
+    forall x1 x2, x1 el xs -> x2 el xs -> f x1 = f x2 -> x1 = x2.
+  
+
+  Lemma R_is_injective_on_dupfree_rel:
+    forall (xs ys : list X),
+      dupfree_rel xs ->
+      dupfree_rel ys ->
+      injective_relation_on R xs ys.
+  Proof.
+    intros ? ? [_ DFxs] [_ DFys] ? ? ? ELx1 ELx2 ELy R1 R2.
+    decide (x1 = x2) as [EQ|NEQ]; [assumption|exfalso].
+    apply R_sym in R2.
+    specialize (R_trans _ _ _ R1 R2).
+    specialize (DFxs _ _ ELx1 ELx2 NEQ R_trans); auto.
+  Qed.
+
+  Lemma function_from_relation:
+    forall xs ys,
+      (forall x, x el xs -> exists y, y el ys /\ R x y) -> (* TODO: add def for this *)
+      exists f : X -> X, forall x, x el xs -> f x el ys /\ R x (f x). 
+  Proof.
+    intros; induction xs.
+    - exists (fun x => x); intros ? EL; destruct EL.
+    - feed IHxs.
+      { intros ? EL; apply H; right; assumption. }
+      destruct IHxs as [f EQU].
+      specialize (H a (or_introl eq_refl)); destruct H as [y [ELy Ra]].
+      exists (fun x => if decision (x=a) then y else f x).
+      intros x EL.
+      destruct EL as [EQ|EL]; [subst x| ].
+      { decide (a = a) as [EQ|F]; [auto| exfalso; auto]. }
+      { decide (x = a) as [EQ|NEQ]; [subst a | apply EQU]; auto. }
+  Qed.
+
+  Lemma injective_function_from_injective_relation:
+    forall xs ys,
+      injective_relation_on R xs ys -> 
+      (forall x, x el xs -> exists y, y el ys /\ R x y) ->
+      exists f : X -> X,
+        injective_function_on f xs /\
+        (forall x, x el xs -> f x el ys /\ R x (f x)).
+  Proof.
+    intros ? ? INJ TODO.
+    apply function_from_relation in TODO.
+    destruct TODO as [f EQU].
+    exists f; split; auto.
+    intros x1 x2 ELx1 ELx2 EQ.
+    assert(EQUx1 := EQU _ ELx1).
+    assert(EQUx2 := EQU _ ELx2).
+    clear EQU; destruct EQUx1 as [ELf1 Rx1], EQUx2 as [ELf2 Rx2].
+    specialize (INJ x1 x2 (f x1)); apply INJ; auto.
+    rewrite EQ; auto.
+  Qed.    
+
+
+  Lemma todo102:
+    forall (f : X -> X) (xs : list X),
+      injective_function_on f xs ->
+      NoDup xs <-> NoDup (map f xs).
+  Proof.
+    intros ? ? INJ; split; intros ND.
+    { induction xs.
+      { assumption. } 
+      { apply NoDup_cons_iff in ND; destruct ND  as [NEL ND].
+        feed IHxs. intros x1 x2 EL1 EL2 EQ; apply INJ; auto; right; auto.
+        simpl; apply NoDup_cons_iff; split; [ | auto].
+        intros EL; apply in_map_iff in EL; destruct EL as [a' [EQ NEL2]].
+        apply INJ in EQ; subst; auto; [right|left]; auto.
+      }
+    }
+    { induction xs.
+      { assumption. } 
+      { simpl in ND; apply NoDup_cons_iff in ND; destruct ND  as [NEL ND].
+        feed IHxs. intros ? ? EL1 EL2 EQ; apply INJ; auto; right; auto.
+        simpl; apply NoDup_cons_iff; split; [ | auto].
+        intros EL; apply NEL; clear NEL.
+        apply in_map_iff; exists a; split; auto.
+      }
+    }
+  Qed.
+
+  Let codomain_in (f : X -> X) (xs ys : list X) :=
+    forall x, x el xs -> f x el ys.
+
+
+  Fixpoint rem (xs : list X) (a : X) : list X :=
+    match xs with
+    | [] => []
+    | x::xs => if decision (a = x) then rem xs a else x::rem xs a
+    end.
+
+  Lemma todo104:
+    forall (xs : list X) (a b : X),
+      a el xs ->
+      a <> b ->
+      a el rem xs b.
+  Proof.
+    induction xs as [ | x xs]; intros ? ? EL NEQ.
+    - destruct EL.
+    - destruct EL as [EQ|EL]; [subst| ].
+      simpl; decide (b = a); [exfalso|left]; auto.      
+      simpl; decide (b = x); [subst|right]; auto.
+  Qed.
+  
+  Lemma todo106:
+    forall a xs,
+      length (rem xs a) <= length xs.
+  Proof.
+    intros ? ?; induction xs.
+    - simpl; auto.
+    - simpl; decide (a = a0); simpl.
+      apply Nat.le_trans with (length xs); auto.
+      apply le_n_S; auto.
+  Qed.
+  
+  Lemma todo105:
+    forall a xs,
+      a el xs -> 
+      length (rem xs a) < length xs.
+  Proof.
+    intros ? ? EL; induction xs.
+    - destruct EL.
+    - destruct EL as [EQ|EL]; [subst a0| ]; simpl.
+      + decide (a = a) as [_| ];[ | exfalso; auto]; clear IHxs.
+        apply Nat.lt_succ_r, todo106.
+      + decide (a = a0).
+        apply Nat.lt_succ_r, todo106.
+        simpl; apply le_n_S, lt_le_S; auto.
+  Qed.
+   
+  Lemma todo103:
+    forall (f : X -> X) (xs ys : list X),
+      NoDup xs ->
+      injective_function_on f xs ->
+      codomain_in f xs ys ->
+      length xs <= length ys.
+  Proof.
+    intros ? ? ? ND INJ COD.
+    assert(NDf := proj1 (todo102 f xs INJ) ND); clear ND.
+    assert(EX: exists n, length xs <= n).
+    { exists (length xs); auto. }
+    destruct EX as [n LE].
+    apply not_lt; intros LEN.
+    generalize dependent LEN; generalize dependent NDf;
+      generalize dependent COD; generalize dependent INJ;
+        generalize dependent LE; generalize dependent ys; generalize dependent xs.
+    induction n; intros.
+    { apply le_n_0_eq, eq_sym, length_zero_iff_nil in LE.
+      subst xs; simpl in LEN; apply Nat.nlt_0_r in LEN; auto. }
+    { destruct xs as [ |x xs].
+      { simpl in LEN; apply Nat.nlt_0_r in LEN; auto. } 
+      { specialize (IHn xs (rem ys (f x))).
+        feed_n 5 IHn. 
+        { apply le_S_n; auto. } 
+        { intros x1 x2 EL1 EL2 EQ; apply INJ; try right; auto. }
+        { intros a EL.
+          assert(NEQ: a <> x).
+          { intros EQ; simpl in NDf.
+            apply NoDup_cons_iff in NDf; destruct NDf as [NEL NDf].
+            apply NEL; subst a.
+            apply in_map_iff; exists x; split; auto.
+          }             
+          specialize (COD a (or_intror EL)).
+          apply todo104; auto.
+          intros EQ; specialize (INJ a x (or_intror EL) (or_introl eq_refl) EQ); auto.
+        }
+        { simpl in NDf; apply NoDup_cons_iff, proj2 in NDf; auto. }
+        { simpl in LE; apply le_S_n in LE.
+          apply Nat.lt_le_trans with (length ys).
+          apply todo105; apply COD; left; reflexivity.
+          apply lt_n_Sm_le in LEN; auto.
+        }
+        auto.
+      } 
+    }         
+  Qed.
+          
+  (* TODO: check the name *)
+  Lemma anti_pigeonhole:
     forall (xs ys : list X),
       dupfree_rel xs ->
       dupfree_rel ys ->
       length xs > length ys ->
       exists x, x el xs /\ forall y, y el ys -> ~ R x y. 
   Proof.
-    intros xs ys; generalize dependent xs; induction ys; intros ? [ND1 DF1] [ND2 DF2] LT.
-    admit.
+    intros ? ? [ND1 DF1] [ND2 DF2] LT.
+    destruct (dec_todo xs ys) as [A|A]; [assumption | exfalso].
+    assert(INJ := R_is_injective_on_dupfree_rel xs ys).
+    feed_n 2 INJ; try (split; eauto).
+    assert(INJf := injective_function_from_injective_relation _ _ INJ A).
+    destruct INJf as [f [INJf Af]].
+    assert(LE := todo103 f xs ys ND1 INJf (fun x EL => proj1 (Af x EL))).
+    apply Nat.le_ngt in LE; auto.
+  Qed.
 
-    destruct xs as [ | x xs]; [simpl in LT;admit | ].
-    
-    simpl in LT.
-    specialize (IHys xs). feed_n 3 IHys. admit. admit. admit.
-    
-    
-    
-    (* 
-    assert(EX: exists n, length xs <= n). admit.
-    destruct EX as [n LEN].
-    generalize dependent ys; generalize dependent xs.
-    induction n; intros; [admit| ].
-    apply Nat.le_succ_r in LEN; destruct LEN as [LEN|LEN].
-    - apply IHn; auto.
-    - 
-      specialize (IHn xs). feed_n 3 IHn. admit. admit. admit.
-     specialize (IHn ys). feed_n 3
-     *)
-      
-  Admitted.
-      
+  
 End Sec1.
 
 (* TODO: name *)

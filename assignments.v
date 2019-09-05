@@ -83,12 +83,12 @@ Section Lemmas.
       - right; intros C; apply n0; inversion C; reflexivity.
     Defined. (* Todo: Qed? *)
 
-
     (* admit_ *)
     Global Instance eq_assignment_dec :
       eq_dec assignment.
     Proof.
-      intros x y. 
+      intros x y.
+      
     Admitted.
 
 
@@ -314,6 +314,17 @@ Section Lemmas.
       destruct b; feed EQU; auto; inversion_clear EQU; auto.
     Qed.
 
+    Lemma todo107:
+      eq_dec assignment.
+    Proof.
+    Admitted.
+
+    Lemma todo108:
+      forall (vs : variables) (α β : assignment),
+        dec (equiv_assignments vs α β).
+    Proof.
+    Admitted.
+    
   End PropertiesOfEquivalence.
 
 End Lemmas.
