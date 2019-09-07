@@ -943,11 +943,7 @@ Section kCliques.
 (*   Compute (counting_k_cliques 3 graph_pentagram).
     Compute (counting_k_cliques' 3 graph_pentagram). *)
     
-    
-    
- 
-  
-    
+
 End kCliques.
 
 
@@ -981,7 +977,10 @@ Section Algorithm3.
         b1 = b2.
     Proof.
       intros ? ? ? ? M1 M2.
-    Admitted.
+      destruct b1, b2; try reflexivity; exfalso.
+      all: inversion M1; subst; inversion M2; subst.
+      all: eapply todo46; eauto. 
+    Qed.
     
     Corollary todo48:
       forall (α : assignment) (l : literal),
@@ -1028,44 +1027,69 @@ Section Algorithm3.
       forall (α: assignment), monomial_unsat_assignment m α.
 
 
-    
+    (*
     Global Instance admit_mon_eq_dec:
       eq_dec monomial.
     Proof.
       intros.    
-    Admitted.
+    Admitted. *)
 
     Lemma todo49:
       forall (α : assignment) (m : monomial),
-        (forall l, l el m -> literal_eval l α true)
-        \/ (exists l, l el m /\ forall b, ~ literal_eval l α b)
-        \/ (exists l, l el m /\ literal_eval l α false).
+        (forall l, l el m -> literal_eval l α true) \/
+        ((exists l, l el m /\ forall b, ~ literal_eval l α b)
+         /\ (forall l, l el m -> (exists b, literal_eval l α b) -> literal_eval l α true)) \/
+        (exists l, l el m /\ literal_eval l α false).
     Proof.
       clear; intros; induction m.
       left; intros l EL; inversion EL.      
       destruct IHm as [IH|[IH|IH]].
       { destruct a; destruct (todo22 α v) as [[[V H]|[V H]]|[V H]].
         - left; intros l EL; destruct EL as [EQ|IN]; subst; auto.
-        - right; left; exists (Positive v); split; [left| ]; auto.
-          intros b EV; inversion_clear EV.
-          apply todo21 in H0; auto.
+        - right; left; split. 
+          + exists (Positive v); split; [left| ]; auto.
+            intros b EV; inversion_clear EV.
+            apply todo21 in H0; auto.
+          + intros ? [EQ|EL] [b EV]; subst; apply IH; auto.
+            inversion_clear EV; specialize (H _ H0); destruct H.
         - right; right; exists (Positive v); split; [left| ]; auto.
         - right; right; exists (Negative v); split; [left| ]; auto.
-        - right; left; exists (Negative v); split; [left| ]; auto.
-          intros b EV; inversion_clear EV.
-          apply todo21 in H0; auto.
+        - right; left; split.
+          + exists (Negative v); split; [left| ]; auto.
+            intros b EV; inversion_clear EV.
+            apply todo21 in H0; auto.
+          + intros ? [EQ|EL] [b EV]; subst; apply IH; auto.
+            inversion_clear EV; specialize (H _ H0); destruct H.
         - left; intros l EL; destruct EL as [EQ|IN]; subst; auto. 
       }     
-      { destruct IH as [l [EL NE]].
-        right; left.
-        exists l; split; [right | ]; auto.  
+      { destruct IH as [[l [EL NE]] ALL], a, (todo22 α v) as [[[V H]|[V H]]|[V H]]; right.
+        - left; split.
+          + exists l; split; [right | ]; auto.
+          + intros l2 [EQ|EL2] [b EV]; subst; [constructor|apply ALL]; eauto.
+        - left; split.
+          + exists l; split; [right | ]; auto.
+          + intros l2 [EQ|EL2] [b EV]; subst.
+            exfalso; inversion_clear EV; eapply H; eauto.
+            apply ALL; eauto.
+        - right.
+          exists (Positive v); split; [left| ]; auto.
+        - right.
+          exists (Negative v); split; [left| ]; auto.      
+        - left; split.
+          + exists l; split; [right | ]; auto.
+          + intros l2 [EQ|EL2] [b EV]; subst.
+            exfalso; inversion_clear EV; eapply H; eauto.
+            apply ALL; eauto.
+        - left; split.
+          + exists l; split; [right | ]; auto.
+          + intros l2 [EQ|EL2] [b EV]; subst; [constructor|apply ALL]; eauto.
       }
       { destruct IH as [l [EL NE]].
         right; right.
         exists l; split; [right | ]; auto.  
-      }
-    Qed. 
-
+      }      
+    Qed.
+    
   End Monomial.
 
   Section DNF.
@@ -1097,15 +1121,12 @@ Section Algorithm3.
         dnf_representation ϕ2 ψ ->
         dnf_representation ϕ1 ψ.
     Proof.
-    Admitted.
+      intros ? ? ? EQU DNF1.
+      intros ? b; split; intros EV.
+      apply DNF1, EQU; assumption.
+      apply EQU, DNF1; assumption.
+    Qed.
 
-    Lemma admit_tr_eq_rep_2:
-      forall (ϕ : formula) (ψ1 ψ2 : dnf),
-        equivalent_dnf ψ1 ψ2 ->
-        dnf_representation ϕ ψ1 ->
-        dnf_representation ϕ ψ2.
-    Proof.
-    Admitted.
     
 
     Lemma todo15:
@@ -1129,19 +1150,29 @@ Section Algorithm3.
     Proof.
       intros.
       induction ψ.
-      left. intros . inversion_clear H.
-      
-      destruct IHψ as [IH|[IH|IH]]. 
-      { destruct (todo49 α a) as [H|[H|H]].
-        
-        admit.
-        admit.
-        left.
-        admit.
-      }
-      { admit. }
-      { admit. }
-    Admitted.
+      - left; intros; inversion_clear H.
+      - destruct IHψ as [IH|[IH|IH]].
+        + destruct (todo49 α a) as [H|[H|H]].
+          * right; right.
+            exists a; split; [left|constructor]; auto.
+          * right; left; destruct H as [[l [EL NO]] ALL].
+            exists a; split; [left| ]; auto; intros [ | ] MON.
+            apply NO with (b := true); inversion_clear MON; auto.
+            inversion_clear MON; destruct H as [l2 [EL2 NO2]].
+            specialize (ALL l2 EL2 (@ex_intro _ (literal_eval l2 α) false NO2)).
+            eapply todo48; eauto.
+          * left.
+            destruct H as [l [EL ALL]].
+            intros m [EQ|EL2]; subst.
+            constructor; exists l; split; auto.
+            apply IH; auto.
+        + right; left.
+          destruct IH as [m [EL ALL]].
+          exists m; split; [right| ]; auto.
+        + right; right.
+          destruct IH as [m [EL ALL]].
+          exists m; split; [right| ]; auto.
+    Qed.
     
     
   End DNF.
@@ -1528,7 +1559,8 @@ Section Algorithm3.
           exists (ψ1 ++ ψ2); apply dnf_representation_of_or; auto.
         }
       Qed.
-
+ 
+      Print Assumptions to_dnf.
       (* Compute (proj1_sig (to_dnf ((x0 ∨ x1) ∧ (x0 ∨ x2)))). *)
 
     End FormulaToDNF.
@@ -1567,6 +1599,97 @@ Section Algorithm3.
         - simpl; constructor; constructor.
       Qed.
 
+      
+      Lemma todo109:
+        forall (mon : monomial) (v : variable),
+          Positive v el mon -> 
+          v el vars_in (monomial_to_certificate1 mon).
+      Proof.
+        intros; induction mon.
+        - destruct H.
+        - destruct H as [EQ|EL]; [subst; clear IHmon | ].
+          + simpl; left; reflexivity.
+          + destruct a; simpl; right; auto.
+      Qed.
+
+      
+      Lemma todo112:
+        forall (mon : monomial) (v : variable),
+          monomial_satisfiable mon -> 
+          Positive v el mon ->
+          Negative v el mon ->
+          False.
+      Proof.
+        intros ? ? SAT N P.
+        inversion_clear SAT as [α SAT2].
+        inversion_clear SAT2.
+        assert(F1 := H _ P); assert(F2 := H _ N); clear H N P.
+        inversion_clear F1; inversion_clear F2.
+        destruct (todo46 _ _ H H0).
+      Qed.
+
+      Lemma todo113:
+        forall (l : literal) (mon : monomial),
+          monomial_satisfiable (l :: mon) ->
+          monomial_satisfiable mon.
+      Proof.
+        intros ? ? SAT.
+        inversion_clear SAT as [α SAT2].
+        exists α; constructor; intros.
+        inversion_clear SAT2; apply H0; right; assumption.
+      Qed.
+      
+      Lemma todo108:
+        forall (mon : monomial) (v : variable),
+          Positive v el mon ->
+          monomial_satisfiable mon -> 
+          v / monomial_to_certificate1 mon ↦ true.
+      Proof.
+        intros ? ? EL SAT; induction mon as [ |m mon]; [destruct EL| ].
+        destruct EL as [EQ|EL]; [subst; clear IHmon| ]. 
+        - simpl; constructor.
+        - destruct m; decide (v = v0) as [ |NEQ]; subst.
+          + constructor.
+          + specialize (IHmon EL (todo113 _ _ SAT)).
+            simpl; constructor; auto.
+          + exfalso; apply todo112 with (v := v0) (mon := Negative v0 :: mon);
+              [ |right|left]; auto.
+          + simpl; constructor; auto.
+            apply IHmon; eauto using todo113.
+      Qed.
+      
+      Lemma todo110:
+        forall (mon : monomial) (v : variable),
+          Negative v el mon -> 
+          v el vars_in (monomial_to_certificate1 mon).
+      Proof.
+        intros; induction mon.
+        - destruct H.
+        - destruct H as [EQ|EL]; [subst; clear IHmon | ].
+          + simpl; left; reflexivity.
+          + destruct a; simpl; right; auto.
+      Qed.
+      
+      Lemma todo111:
+        forall (mon : monomial) (v : variable),
+          Negative v el mon ->
+          monomial_satisfiable mon -> 
+          v / monomial_to_certificate1 mon ↦ false.
+      Proof.
+        intros ? ? EL SAT; induction mon as [ |m mon]; [destruct EL| ].
+        destruct EL as [EQ|EL]; [subst; clear IHmon| ]. 
+        - simpl; constructor.
+        - destruct m; decide (v = v0) as [ |NEQ]; subst.
+          + exfalso; apply todo112 with (v := v0) (mon := Positive v0 :: mon);
+              [ |left|right]; auto.
+          + simpl; constructor; auto.
+            apply IHmon; eauto using todo113.
+          + constructor.
+          + specialize (IHmon EL (todo113 _ _ SAT)).
+            simpl; constructor; auto.
+      Qed.
+      
+      
       Lemma admit_monomial_to_certificate1:
         forall (ϕ : formula) (ψ : dnf),
           dnf_representation ϕ ψ -> 
@@ -1576,41 +1699,17 @@ Section Algorithm3.
             { ξ | certificate1 ϕ ξ }.
       Proof.
         intros ? ? DNF ? MON SAT.
- 
-      Admitted.
-        
-      (* list minus? *)
-      Definition all_extensions_on (ξ : assignment) (vs : variables): assignments :=
-        map (fun β => ξ ++ β) (all_assignments_on vs). 
-
-      Lemma admit_contains_extensions:
-        forall (ξ : assignment) (vs : variables) (α : assignment),
-          α el all_extensions_on ξ vs ->
-          ext_assignment vs ξ α.
-      Proof.
-        intros ? ? ? EL.
-        apply in_map_iff in EL; destruct EL as [α_tl [EQ EL]]; subst α.
-        split.
-        { admit. }
-        { intros ? ? EL2 EV.
-          admit.
-        }
-      Admitted.
-
-      Print Assumptions admit_contains_extensions.
-
-      (* TODO: fix *)
-      Lemma size_of_list_of_all_extensions:
-        forall (ξ : assignment) (vs : variables),
-          length (all_extensions_on ξ vs) = Nat.pow 2 (length vs).
-      Proof.
-        induction vs; simpl. 
-        { reflexivity. }
-        { unfold all_extensions_on in *; simpl.
-          rewrite !map_length in IHvs.
-          rewrite !map_length, app_length, !map_length, <- plus_n_O, <- IHvs.
-          reflexivity. } 
+        exists (monomial_to_certificate1 mon); intros ? [INC EXT].
+        apply DNF.
+        constructor; exists mon; split; auto.
+        constructor; intros [v|v] EL; constructor; simpl; apply EXT.
+        - apply todo109; auto.
+        - apply todo108; auto.
+        - apply todo110; auto.
+        - apply todo111; auto.
       Qed. 
+
+      Print Assumptions admit_monomial_to_certificate1.
       
     End Certificates.
 

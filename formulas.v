@@ -690,24 +690,62 @@ Section Lemmas.
       - inversion_clear EV; constructor; constructor.
     Qed.
 
-
-
     Lemma admit_fo_eq_5:
       forall (ϕl ϕr ψ : formula),
         equivalent (ϕl ∧ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∨ ¬ ϕr)) ψ.
     Proof.
-      intros ? ? ?; split; intros EQ.
-      
-    Admitted.
+      intros ? ? ?; split; intros EQ; intros ? [ | ]; split; intros EV.
+      all: try apply EQ.
+      all: try apply EQ in EV.
+      - inversion_clear EV; simpl in *; inversion_clear H.
+        inversion_clear H0; inversion_clear H1; simpl in *.
+        constructor; auto.
+      - inversion_clear EV.
+        constructor; simpl; auto.
+      - inversion_clear EV; simpl in *.
+        inversion_clear H.
+        inversion_clear H0; simpl in *; apply ev_conj_fl; auto.
+        inversion_clear H0; simpl in *; apply ev_conj_fr; auto.
+      - inversion_clear EV; simpl in *.
+        constructor; simpl; apply ev_disj_tl; auto.
+        constructor; simpl; apply ev_disj_tr; auto.
+      - inversion_clear EV.
+        constructor; simpl; auto.
+      - inversion_clear EV; simpl in *.
+        inversion_clear H; inversion_clear H0; inversion_clear H1.
+        simpl in *; constructor; auto.
+      - inversion_clear EV; simpl in *.
+        constructor; simpl; apply ev_disj_tl; auto.
+        constructor; simpl; apply ev_disj_tr; auto.
+      - inversion_clear EV; simpl in *.
+        inversion_clear H.
+        inversion_clear H0; simpl in *; apply ev_conj_fl; auto.
+        inversion_clear H0; simpl in *; apply ev_conj_fr; auto.
+    Qed.
 
     Lemma admit_fo_eq_6:
       forall (ϕl ϕr ψ : formula),
         equivalent (ϕl ∨ ϕr) ψ <-> equivalent (¬ (¬ ϕl ∧ ¬ ϕr)) ψ.
     Proof.
-      intros ? ? ?; split; intros EQ.
-      
-      
-    Admitted.
+      intros ? ? ?; split; intros EQ; intros ? [ | ]; split; intros EV.
+      all: try apply EQ.
+      all: try apply EQ in EV.
+      - inversion_clear EV; simpl in *.
+        inversion_clear H.
+        all: inversion_clear H0; simpl in *; auto.
+      - constructor; inversion_clear EV; simpl; auto.
+      - inversion_clear EV; simpl in *.
+        inversion_clear H; inversion_clear H0; inversion_clear H1; auto.
+      - inversion_clear EV.
+        constructor; simpl; auto.
+      - inversion_clear EV; constructor; simpl; auto.
+      - inversion_clear EV; simpl in *; inversion_clear H.
+        all: inversion_clear H0; simpl in *; auto.
+      - inversion_clear EV; auto.
+      - inversion_clear EV; simpl in *; inversion_clear H.
+        inversion_clear H0; inversion_clear H1.
+        constructor; auto.
+    Qed.      
 
   End PropertiesOfEquivalence.
 
