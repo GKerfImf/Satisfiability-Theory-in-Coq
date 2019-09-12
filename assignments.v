@@ -217,7 +217,7 @@ Section Lemmas.
     Lemma equiv_assignments_cancel_cons:
       forall (α1 α2 : assignment) (vs : list variable) (a : variable) (b : bool),
         a nel vs ->
-        equiv_assignments (a::vs) ((a,b)::α1) ((a,b)::α2) ->
+        equiv_assignments (a :: vs) ((a, b) :: α1) ((a, b) :: α2) ->
         equiv_assignments vs α1 α2.
     Proof.
       intros α1 α2 ? ? ? NEL EQU v EL ?.
@@ -233,7 +233,7 @@ Section Lemmas.
       forall (vs vs_sub : variables) (v : variable) (b : bool) (α1 α2 : assignment),
         vs_sub ⊆ vs ->
         v nel vs_sub ->
-        equiv_assignments vs ((v,b)::α1) ((v,b)::α2) ->
+        equiv_assignments vs ((v, b) :: α1) ((v, b) :: α2) ->
         equiv_assignments vs_sub α1 α2.
     Proof.
       intros ? ? v ? ? ? INCL NEL EQU x EL b.
@@ -245,7 +245,7 @@ Section Lemmas.
 
     Lemma non_equiv_assignments:
       forall (α1 α2 : assignment) (vs : variables) (a : variable) (b : bool),
-        ~ equiv_assignments (a :: vs) ((a, b)::α1) ((a, negb b)::α2).
+        ~ equiv_assignments (a :: vs) ((a, b) :: α1) ((a, negb b) :: α2).
     Proof.
       intros ? ? ? ? ? EQ.
       specialize (EQ a); feed EQ; [left; auto | ].
