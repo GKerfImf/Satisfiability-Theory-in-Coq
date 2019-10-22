@@ -6,9 +6,13 @@
 /html
 *.aux
 Makefile*
+_CoqProject
 *.crashcoqide
 *.v#
 *.cache
 *~
 *.orig
 */.#*
+#*#
+.#*
+*.DS_Store
